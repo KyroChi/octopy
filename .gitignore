@@ -1,0 +1,9 @@
+octopy.egg-info/
+*~
+*.o
+*~
+*.gch
+#*
+octopy/__pycache__/*
+dist/*
+build/*
