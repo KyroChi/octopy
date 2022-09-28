@@ -1,47 +1,36 @@
 /**
- * Wrapper class for the underlying Tensor struct
+ * Wrapper class for the C Tensor struct
  */
 
 #include <Python.h>
 #include "structmember.h"
 
 #include "../math/tensor.h"
+#include "py_tensor.h"
+#include "py_octopy.h"
 
-typedef struct{
-	PyObject_HEAD        // Semicolon included in header
-	PyObject *shape;      // axes as a tuple
-	/* _tensor holds unsigned int rank and unsigned int *axes */
-	Tensor *_tensor;      	
-} PyTensor;
-
-static void
-PyTensor_dealloc (PyTensor* self)
+PyTensor *
+new_PyTensor_from_tensor (Tensor *T)
 {
-	free_tensor(self->_tensor);
-	Py_XDECREF(self->shape);
-	Py_TYPE(self)->tp_free( (PyObject*) self );
+	PyTensor *res;
+	PyObject *py_rank, *py_shape, *args;
 
-	return;
+	res = (PyTensor *) PyTensor_new(&PyTensorType, NULL, NULL);
+	py_rank = Py_BuildValue("i", (int) T->rank);
+	py_shape = get_PyTuple_from_idxs(T->rank, T->shape);
+
+	args = PyTuple_New(2);
+	PyTuple_SetItem(args, 0, py_rank);
+	PyTuple_SetItem(args, 1, py_shape);
+	PyTensor_init(res, args, NULL);
+	res->_tensor = T;
+
+	// TODO: Free memory
+
+	return res;
 }
 
-static PyObject *
-PyTensor_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-	PyTensor *self = NULL;
-		
-	self = (PyTensor *)type->tp_alloc(type, 0);
-
-	if (self == NULL) {
-		return NULL;
-	}
-
-	self->shape = NULL;
-	self->_tensor = NULL;
-
-	return (PyObject *) self;
-}
-
-static unsigned int *
+unsigned int *
 get_idxs_from_PyTuple (PyObject *tuple)
 /* You should know how long this tuple is prior to obtaining the
  * inexes */
@@ -61,7 +50,66 @@ get_idxs_from_PyTuple (PyObject *tuple)
 	return idxs;
 }
 
-static int
+PyObject *
+get_PyTuple_from_idxs (unsigned int rank, unsigned int *shape)
+{
+	PyObject *py_tuple = PyTuple_New(rank);
+	
+	if ( !py_tuple ) {
+		// Set error flags
+		return NULL;
+	}
+
+	unsigned int ii;
+	for (ii = 0; ii < rank; ii += 1) {
+		PyTuple_SetItem(py_tuple, ii,
+				PyLong_FromLong(shape[ii]));
+	}
+
+	return py_tuple;
+}
+
+int
+check_tuple_size (PyTensor *T, PyObject *py_tuple)
+{
+	if ( !((unsigned int) PyTuple_Size(py_tuple) ==
+	       T->_tensor->rank) ) {
+		PyErr_SetString(PyExc_IndexError,
+				"attempted to index an array using a tuple of incorrect shape");
+		return -1;
+	}
+
+	return 0;
+}
+
+void
+PyTensor_dealloc (PyTensor* self)
+{
+	free_tensor(self->_tensor);
+	Py_XDECREF(self->shape);
+	Py_TYPE(self)->tp_free( (PyObject*) self );
+
+	return;
+}
+
+PyObject *
+PyTensor_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyTensor *self = NULL;
+		
+	self = (PyTensor *)type->tp_alloc(type, 0);
+
+	if (self == NULL) {
+		return NULL;
+	}
+
+	self->shape = NULL;
+	self->_tensor = NULL;
+
+	return (PyObject *) self;
+}
+
+int
 PyTensor_init (PyTensor *self, PyObject *args, PyObject *kwds)
 {
 	unsigned int rank;
@@ -70,7 +118,9 @@ PyTensor_init (PyTensor *self, PyObject *args, PyObject *kwds)
 	PyObject *py_tuple, *tmp;
 
 	if ( !PyArg_ParseTuple(args, "iO", &rank, &py_tuple) ) {
-		// TODO: set error flags
+		// TODO: Better error parsing
+		PyErr_SetString(PyExc_TypeError,
+				"Must be called with iO type");
 		return -1;
 	}
 
@@ -109,50 +159,28 @@ PyTensor_init (PyTensor *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static int
-check_tuple_size (PyTensor *T, PyObject *py_tuple)
+PyObject *
+PyTensor_set_tensor_linear (PyTensor *self, PyObject *args)
 {
-	if ( !((unsigned int) PyTuple_Size(py_tuple) ==
-	       T->_tensor->rank) ) {
-		PyErr_SetString(PyExc_IndexError,
-				"attempted to index an array using a tuple of incorrect shape");
-		return -1;
-	}
-
-	return 0;
-}
-
-static int
-PyTensor_set_tensor (PyTensor *self, PyObject *args)
-{
-	PyObject *py_tuple;
-	unsigned int *idxs;
+	unsigned int index;
 	float v;
-
-	if ( !PyArg_ParseTuple(args, "Of", &py_tuple, &v) ) {
+	
+	if ( !PyArg_ParseTuple(args, "if", &index, &v) ) {
 		// TODO: Set error flags. Failed parse.
-		return -1;
+		PyErr_SetString(PyExc_Exception,
+				"Parse failure");
+		return NULL;
 	}
 
-	if ( 0 > check_tuple_size(self, py_tuple) ) {
-		// Error set in call
-		return -1;
-	}
-
-	idxs = get_idxs_from_PyTuple(py_tuple);
-
-	if ( 0 > check_index_validity(self->_tensor, idxs) ) {
+	if ( self->_tensor->size < index ) {
 		PyErr_SetString(PyExc_IndexError,
-				"index out of bound for tensor");
-		return -1;
+				"index out of bounds");
+		return NULL;
 	}
-	
-	set_tensor(self->_tensor, idxs, v);
-	
-	free(idxs);
-	Py_XDECREF(py_tuple);
-	
-	return 0;
+
+	self->_tensor->data[index] = v;
+
+	return Py_None;
 }
 
 PyObject *
@@ -161,6 +189,8 @@ PyTensor_get_tensor (PyTensor *self, PyObject *args)
 	PyObject *py_tuple;
 	unsigned int *idxs;
 	float v;
+
+	// TODO: Python argument handling
 
 	if ( !PyArg_ParseTuple(args, "O", &py_tuple) ) {
 		// TODO: Set error flags. Failed Parse.
@@ -188,95 +218,125 @@ PyTensor_get_tensor (PyTensor *self, PyObject *args)
 	return Py_BuildValue("f", v);
 }
 
-void
+PyObject *
+PyTensor_set_tensor (PyTensor *self, PyObject *args, PyObject *kwargs)
+{
+	PyObject *py_tuple;
+	unsigned int *idxs;
+	float v;
+
+	if ( !PyArg_ParseTuple(args, "Of", &py_tuple, &v) ) {
+		// TODO: Set error flags. Failed parse.
+		PyErr_SetString(PyExc_Exception,
+				"Parse failure");
+		return NULL;
+	}
+
+	if ( 0 > check_tuple_size(self, py_tuple) ) {
+		// Error set in call
+		return NULL;
+	}
+
+	idxs = get_idxs_from_PyTuple(py_tuple);
+
+	if ( 0 > check_index_validity(self->_tensor, idxs) ) {
+		PyErr_SetString(PyExc_IndexError,
+				"index out of bound for tensor");
+		return NULL;
+	}
+	
+	set_tensor(self->_tensor, idxs, v);
+	
+	free(idxs);
+	Py_XDECREF(py_tuple);
+	
+	return Py_None;
+}
+
+PyObject *
 PyTensor_to_ones (PyTensor *self)
 {
 	to_ones(self->_tensor);
-	return;
+	return Py_None;
 }
 
-static PyMemberDef PyTensor_members[] = {
-	{"shape", T_OBJECT_EX, offsetof(PyTensor, shape), 0,
-	 "tuple containing size of axes"},
-	{NULL} /* Sentinal */
-};
-
-static PyMethodDef PyTensor_methods[] = {
-	{"_set_tensor", (PyCFunction) PyTensor_set_tensor,
-	 METH_VARARGS,
-	 "Set the value at supplied axes."},
-	{"_get_tensor", (PyCFunction) PyTensor_get_tensor,
-	 METH_VARARGS,
-	 "Get the value at supplied axes."},
-	{"_to_ones", (PyCFunction) PyTensor_to_ones,
-	 METH_VARARGS,
-	 "Set all entries to 1."},
-	{NULL}
-};
-
-static PyTypeObject PyTensorType = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	"octopy._Tensor",             /* tp_name */
-	sizeof(PyTensor),             /* tp_basicsize */
-	0,                         /* tp_itemsize */
-	(destructor)PyTensor_dealloc, /* tp_dealloc */
-	0,                         /* tp_print */
-	0,                         /* tp_getattr */
-	0,                         /* tp_setattr */
-	0,                         /* tp_reserved */
-	0,                         /* tp_repr */
-	0,                         /* tp_as_number */
-	0,                         /* tp_as_sequence */
-	0,                         /* tp_as_mapping */
-	0,                         /* tp_hash  */
-	0,                         /* tp_call */
-	0,                         /* tp_str */
-	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
-	0,                         /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_BASETYPE,   /* tp_flags */
-	"Tensor object",           /* tp_doc */
-	0,                         /* tp_traverse */
-	0,                         /* tp_clear */
-	0,                         /* tp_richcompare */
-	0,                         /* tp_weaklistoffset */
-	0,                         /* tp_iter */
-	0,                         /* tp_iternext */
-	PyTensor_methods,             /* tp_methods */  /* Type methods */
-	PyTensor_members,             /* tp_members */
-	0,                         /* tp_getset */
-	0,                         /* tp_base */
-	0,                         /* tp_dict */
-	0,                         /* tp_descr_get */
-	0,                         /* tp_descr_set */
-	0,                         /* tp_dictoffset */
-	(initproc)PyTensor_init,      /* tp_init */
-	0,                         /* tp_alloc */
-	PyTensor_new,                 /* tp_new */
-};
-
-static PyModuleDef octopymodule = {
-	PyModuleDef_HEAD_INIT,
-	"octopy",
-	"Tensor and machine learning library.",
-	-1,
-	NULL, NULL, NULL, NULL, NULL
-};
-
-PyMODINIT_FUNC
-PyInit_octopy(void)
+PyObject *
+PyTensor_add_tensor (PyTensor *self, PyObject *args)
 {
-	PyObject* m;
+	PyTensor *v;
+	Tensor *sum;
 
-	if (PyType_Ready(&PyTensorType) < 0)
+	if ( !PyArg_ParseTuple(args, "O", &v) ) {
+		// TODO: Set error flags
 		return NULL;
+	}
 
-	m = PyModule_Create(&octopymodule);
-	if (m == NULL)
+	sum = tensor_add_s(self->_tensor, v->_tensor);
+	Py_XDECREF(v);
+
+	return (PyObject *) new_PyTensor_from_tensor(sum);
+}
+
+PyObject *
+PyTensor_assign_data_from_list (PyTensor *self, PyObject *args)
+/**
+ * Assigns data from an unrolled list to a tensor. The parsing and
+ * unrolling is done by the caller (probably in Python).
+ */
+{
+	PyObject *data;
+	unsigned int size, ii;
+	float v;
+
+	if ( !PyArg_ParseTuple(args, "O", &data) ) {
+		// TODO: Set error flags
 		return NULL;
+	}
 
-	Py_INCREF(&PyTensorType);
-	PyModule_AddObject(m, "_Tensor", (PyObject *)&PyTensorType);
-	return m;
+	size = PyList_Size(data);
+
+	for (ii = 0; ii < size; ii += 1) {
+		v = (float) PyFloat_AsDouble(PyList_GetItem(data, ii));
+		
+		if ( PyErr_Occurred() ) {
+			PyErr_SetString(PyExc_Exception,
+				"Failed to convert data to float?");
+			return NULL;
+		}
+		
+		self->_tensor->data[ii] = v;
+	}
+
+	Py_XDECREF(data);
+
+	return Py_None;
+}
+
+
+PyObject *
+PyTensor_matmul (PyTensor *self, PyObject *args)
+{
+	PyTensor *v;
+	Tensor *prod;
+
+	if ( !PyArg_ParseTuple(args, "O", &v) ) {
+		// TODO: Set error flags
+		return NULL;
+	}
+
+	prod = tensor_matmul(self->_tensor, v->_tensor);
+	Py_XDECREF(v);
+
+	return (PyObject *) new_PyTensor_from_tensor(prod);
+}
+
+PyObject *
+PyTensor_dump (PyTensor *self)
+/**
+ * Return the self->_tensor->data array as a Python array.
+ *
+ * Must be re-nested by caller.
+ */
+{
+	return NULL;
 }

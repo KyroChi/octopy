@@ -32,9 +32,18 @@ class opTensor (_Tensor):
         super(opTensor, self).__init__(len(shape), shape)
 
     def _assign_data_from_list(self, data):
-        # unroll data and repeatedly call self._set_tensor(idxs, v)
-        current_index = [0 for _ in self.axes]
-        pass
+        """
+        Assumes that the data has been checked.
+        """
+        # BROKEN: This indexes row first and I need to index column
+        # first. This transposes the first rows?
+
+        # The problem is that the data will be row first then column,
+        # but stored as column first.
+        data = unroll_nested_list(data, [])
+        
+        for ii, dd in enumerate(data):
+            self._set_tensor_linear(ii, dd)
 
     def __getitem__(self, i):
         # No slices yet
@@ -60,12 +69,14 @@ class opTensor (_Tensor):
         self._set_tensor(i, v)
 
     def __str__(self):
+        return "opTensor(shape=" + str(self.shape) + ")"
+
+    def print_values(self):
         """
-        Pretty print the tensor.
+        Use for debugging. Pretty prints the tensor
         """
-        # flatten the array (intensive computation)
-        # recursive printing?
-        pass
+        data = self._dump()
+
 
 def recursive_check_valid (data):
     """
@@ -99,9 +110,22 @@ def recursive_check_valid (data):
                 return False
 
     return True
-        
 
-def tensor(data):
+
+def unroll_nested_list (data, unrolled):
+    """
+    Flatten a nested list into a single list
+    """
+    if not isinstance(data[0], list):
+        for dd in data:
+            unrolled.append(dd)
+    else:
+        for dd in data:
+            unrolled = unroll_nested_list(dd, unrolled)
+    
+    return unrolled
+
+def tensor(data, as_column_first=True):
     """ Create an opTensor object from a nested array
     """
     if len(data) == 0:
@@ -115,6 +139,10 @@ def tensor(data):
             'Cannot create opTensor from ragged array'
         )
 
+    # must convert data from row first to column first.
+    if as_column_first:
+        pass
+
     axes = [len(data)]
     child = data[0]
     
@@ -122,26 +150,35 @@ def tensor(data):
         axes.append(len(child))
         child = child[0]
 
-    T = opTensor(tuple(axes))
-
+    T = _Tensor(len(axes), tuple(axes))
+    T._assign_data_from_list(unroll_nested_list(data, []))
     return T
 
 def zeros(shape):
-    return opTensor(shape)
+    if isinstance(shape, list):
+        shape = tuple(shape)
+    elif not isinstance(shape, tuple):
+        raise Exception('Shape must be list or tuple.')
+    
+    return _Tensor(len(shape), shape)
 
 def ones(shape):
-    T = opTensor(shape)
+    if isinstance(shape, list):
+        shape = tuple(shape)
+    elif not isinstance(shape, tuple):
+        raise Exception('Shape must be list or tuple.')
+    
+    T = _Tensor(len(shape), shape)
     T._to_ones()
     return T
 
-
 if __name__ == "__main__":
-    print(recursive_check_valid([1, 2, 3])) # True
-    print(recursive_check_valid([[1, 2, 3], [2,3, 4]])) # True
-    print(recursive_check_valid([[1, 2, 3], [2, 4]])) # False
-    print(recursive_check_valid([[1, 2, 3], 2, 4, 4])) # False
+    # print(recursive_check_valid([1, 2, 3])) # True
+    # print(recursive_check_valid([[1, 2, 3], [2,3, 4]])) # True
+    # print(recursive_check_valid([[1, 2, 3], [2, 4]])) # False
+    # print(recursive_check_valid([[1, 2, 3], 2, 4, 4])) # False
 
-    t = tensor([[1, 2, 3], [1, 2, 3]])
+    t = tensor([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]])
     print(t.shape)
 
     t = tensor([[[1, 1], [1, 1], [1, 1]], [[1, 1], [1, 1], [1, 1]]])
@@ -154,5 +191,18 @@ if __name__ == "__main__":
     print(t.shape)
 
     print(t[1, 2, 1, 1])
-    t[1, 2, 1, 1] = 1.0
-    print(t[1, 2, 1, 1])
+    t[0, 0, 0, 0] = 1
+    print(t[0, 0, 0, 0])
+
+    t = ones((2, 2))
+    t[0, 0] = 1
+    t[0, 1] = 2
+    t[1, 0] = 3
+    t[1, 1] = 4
+
+    print(t[1, 0])
+
+    t = tensor([[1, 2], [3, 4]])
+    print(t)
+
+    

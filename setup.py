@@ -5,7 +5,8 @@ octopy = Extension(
     sources=[
         'src/math/tensor.c',
         'src/python/py_tensor.c',
-        'src/octopy_helper.c'
+        'src/octopy_helper.c',
+        'src/python/py_octopy.c',
     ]
 )
 
