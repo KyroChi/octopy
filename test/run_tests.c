@@ -2,18 +2,31 @@
 #include <stdlib.h>
 
 #include "../src/math/tensor.h"
+#include "../src/threading.h"
 
 void run_tensor_tests (unsigned int *, unsigned int *);
 void tensor_to_ones_test (unsigned int *, unsigned int *);
-int tensor_mul_test (unsigned int *, unsigned int *);
+void tensor_mul_test (unsigned int *, unsigned int *);
+
+#ifdef MULTI_THREADING
+void run_threading_tests (unsigned int*, unsigned int *);
+#endif
 
 int
 main ()
 {
+#ifdef MULTI_THREADING
+	printf("Multithreading on\n");
+#endif
+	
 	unsigned int passed = 0;
 	unsigned int failed = 0;
 
 	run_tensor_tests(&passed, &failed);
+
+#ifdef MULTI_THREADING
+	run_threading_tests(&passed, &failed);
+#endif
 
 	printf("Passed: %d\nFailed: %d\nTotal:  %d\n------------\n",
 	       passed, failed, passed + failed);
@@ -68,12 +81,7 @@ run_tensor_tests (unsigned int *passed, unsigned int *failed)
 	free_tensor(t2);
 	free_tensor(bigT);
 
-	if ( 0 > tensor_mul_test(passed, failed) ) {
-		*failed += 1;
-	} else {
-		*passed += 1;
-	}
-
+	tensor_mul_test(passed, failed);
 	tensor_to_ones_test(passed, failed);
 
 	return;
@@ -99,8 +107,9 @@ tensor_to_ones_test (unsigned int *passed,
 	return;
 }
 
-int
-tensor_mul_test ()
+void
+tensor_mul_test (unsigned int *passed,
+		  unsigned int *failed)
 /**
  * Test that tensor multiplication is working correctly.
  */
@@ -117,26 +126,60 @@ tensor_mul_test ()
 
 	if (A2->data[0] != 7.0) {
 		printf("0 %.5f\n", A2->data[0]);
-		return -1;
-	}
-
-	if (A2->data[2] != 10) {
+		*failed += 1;
+	} else if (A2->data[2] != 10) {
 		printf("2 %.5f\n", A2->data[2]);
-		return -1;
-	}
-
-	if (A2->data[1] != 15) {
+		*failed += 1;
+	} else if (A2->data[1] != 15) {
 		printf("1 %.5f\n", A2->data[1]);
-		return -1;
-	}
-
-	if (A2->data[3] != 22) {
+		*failed += 1;
+	} else if (A2->data[3] != 22) {
 		printf("3 %.5f\n", A2->data[3]);
-		return -1;
+		*failed += 1;
 	}
 
 	free_tensor(A);
 	free_tensor(A2);
+	*passed += 1;
 
-	return 0;
+	return;
 }
+
+#ifdef MULTI_THREADING
+void
+run_threading_tests (unsigned int *passed,
+		     unsigned int *failed)
+{
+	unsigned int n_test = 10;
+	thread_scheduler_s* sch = new_thread_scheduler(n_test, 1);
+
+	unsigned int ii;
+	for (ii = 0; ii < n_test; ii += 1) {
+		if ( !thread_scheduler_full(sch) ) {
+			thread_scheduler_push(sch, NULL);
+		}
+	}
+
+	if ( !thread_scheduler_full(sch) ) {
+		printf("index: %d\n", sch->index);
+		*failed += 1;
+	} else {
+		*passed += 1;
+	}
+
+	for (ii = 0; ii < n_test; ii += 1) {
+		if ( thread_available(sch) ) {
+			thread_scheduler_pop(sch);
+		}
+	}
+
+	if ( thread_available(sch) ) {
+		printf("index: %d\n", sch->index);
+		*failed += 1;
+	} else {
+		*passed += 1;
+	}
+
+	return;
+}
+#endif

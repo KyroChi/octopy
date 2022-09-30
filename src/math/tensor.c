@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "../octopy_helper.h"
+#include "../threading.h"
 #include "tensor.h"
 
 Tensor *
@@ -275,11 +277,70 @@ zip_tensor_map_s (Tensor *A, Tensor*B,
 	return zip_tensor_map(A, B, map_fun);
 }
 
-Tensor *
+void
+matmul_loop (Tensor* A, Tensor* B, Tensor* AB, unsigned int ii)
+{
+	float sum;
+	unsigned int jj, kk;
+	
+	unsigned int *idxs =
+		malloc( sizeof(unsigned int) * AB->rank);
+	unsigned int *A_idxs =
+		malloc( sizeof(unsigned int) * A->rank);
+	unsigned int *B_idxs =
+		malloc( sizeof(unsigned int) * B->rank);
+
+	get_index_idxs(AB, ii, idxs);
+	sum = 0;
+	for (jj = 0; jj < A->shape[A->rank - 1]; jj += 1) {
+		for (kk = 0; kk < A->rank - 1; kk += 1) {
+			A_idxs[kk] = idxs[kk];
+		}
+
+		A_idxs[kk] = jj;
+
+		B_idxs[0] = jj;
+			
+		for (kk = 1; kk < B->rank; kk += 1) {
+			B_idxs[kk] = idxs[A->rank - 2 + kk];
+		}
+
+		sum += get_tensor(A, A_idxs) *
+			get_tensor(B, B_idxs);
+	}
+
+	set_tensor(AB, idxs, sum);
+
+	free(idxs);
+	free(A_idxs);
+	free(B_idxs);
+	
+	return;
+}
+
+#ifdef MULTI_THREADING
+void*
+matmul_loop_p_thread (void* args)
+{
+	matmul_loop_s *p = (matmul_loop_s*) args;
+
+	// Sets the value in the tensor
+	matmul_loop(p->A, p->B, p->AB, p->index);
+
+	pthread_mutex_lock(p->mutex);
+	thread_scheduler_push(p->t_sch, (void *)p);
+	pthread_mutex_unlock(p->mutex);
+
+	pthread_cond_broadcast(p->sf);
+	return NULL;
+}
+#endif
+
+Tensor*
 tensor_matmul (Tensor *A, Tensor *B)
 /* Multiply tensors along the last axis of and the first axis of B */
 {
-	if ( A->shape[A->rank - 1] != B->shape[B->rank - 1] ) {
+	if ( A->shape[A->rank - 1] != B->shape[0] ) {
 		// Set error flags
 		return NULL;
 	}
@@ -289,6 +350,7 @@ tensor_matmul (Tensor *A, Tensor *B)
 
 	if (new_rank == 0) {
 		// TODO: Return dot product
+		printf("New rank is zero\n");
 		return NULL;
 	} else {
 		new_shape =
@@ -307,44 +369,69 @@ tensor_matmul (Tensor *A, Tensor *B)
 	Tensor *AB = new_tensor(new_rank, new_shape);
 	free(new_shape);
 
-	unsigned int jj, kk;
-	float sum;
-	
-	unsigned int *idxs =
-		malloc( sizeof(unsigned int) * AB->rank);
-	unsigned int *A_idxs =
-		malloc( sizeof(unsigned int) * A->rank);
-	unsigned int *B_idxs =
-		malloc( sizeof(unsigned int) * B->rank);
-	
-	for (ii = 0; ii < AB->size; ii += 1) {
-		get_index_idxs(AB, ii, idxs);
-		sum = 0;
-
-		for (jj = 0; jj < A->shape[A->rank - 1]; jj += 1) {
-			for (kk = 0; kk < A->rank - 1; kk += 1) {
-				A_idxs[kk] = idxs[kk];
-			}
-
-			A_idxs[kk] = jj;
-
-			B_idxs[0] = jj;
-			
-			for (kk = 1; kk < B->rank; kk += 1) {
-				B_idxs[kk] = idxs[A->rank - 2 + kk];
-			}
-
-			sum += get_tensor(A, A_idxs) *
-				get_tensor(B, B_idxs);
-			
-		}
-
-		set_tensor(AB, idxs, sum);
+#ifdef MULTI_THREADING
+	thread_scheduler_s *t_sch =
+		new_thread_scheduler(MAXIMUM_THREADS,
+				     sizeof(matmul_loop_s));
+	if ( !t_sch ) {
+		// TODO: Set error flags
+		printf("Failed to instantiate thread scheduler\n");
+		return NULL;
 	}
 
-	free(idxs);
-	free(A_idxs);
-	free(B_idxs);
+	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t dummy = PTHREAD_MUTEX_INITIALIZER;
+	pthread_cond_t scheduler_full = PTHREAD_COND_INITIALIZER;
+
+	for (ii = 0; ii < MAXIMUM_THREADS; ii += 1) {
+		((matmul_loop_s*) t_sch->av[ii])->A = A;
+		((matmul_loop_s*) t_sch->av[ii])->B = B;
+		((matmul_loop_s*) t_sch->av[ii])->AB = AB;
+		((matmul_loop_s*) t_sch->av[ii])->mutex = &mutex;
+		((matmul_loop_s*) t_sch->av[ii])->sf = &scheduler_full;
+		((matmul_loop_s*) t_sch->av[ii])->t_sch = t_sch;
+	}
+
+	matmul_loop_s *args = NULL;
+	
+	for (ii = 0; ii < AB->size; ii += 1) {
+		if ( !thread_available(t_sch) ) {
+			// Wait for a thread to become available
+
+			// dummy mutex since the workers are handled
+			// by the thread_scheduler.
+			pthread_cond_wait(&scheduler_full, &dummy);
+		}
+
+		if ( thread_available(t_sch) ) {
+			args = (matmul_loop_s*)
+				thread_scheduler_pop(t_sch);
+			args->index = ii;
+			pthread_create(&(args->my_id),
+				       NULL,
+				       &matmul_loop_p_thread,
+				       args);
+		} else {
+			// TODO: Set error flags, something has gone
+			// wrong. This shouldn't be called. Maybe the
+			// threads are accessing each other's memory?
+			printf("Threads sharing memory\n");
+			return NULL;
+		}
+	}	
+
+	for (ii = 0; ii < MAXIMUM_THREADS; ii += 1) {
+			// Check that the threads finished. This works
+			// even when we span fewer threads than
+			// MAXIMUM_THREADS.
+			pthread_join(((matmul_loop_s*)t_sch->av[ii])->my_id, NULL);
+		}
+				
+#else
+	for (ii = 0; ii < AB->size; ii += 1) {
+		matmul_loop(A, B, AB, ii);
+	}
+#endif
 
 	return AB;
 }

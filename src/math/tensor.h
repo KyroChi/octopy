@@ -1,6 +1,9 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+#include <pthread.h>
+#include "../threading.h"
+
 typedef struct {
 	unsigned int rank;
 	unsigned int size;
@@ -45,16 +48,33 @@ float add (float, float);
 float sub (float, float);
 float mul (float, float);
 
-Tensor *tensor_add (Tensor *, Tensor *);
-Tensor *tensor_add_s (Tensor *, Tensor *);
-Tensor *tensor_sub (Tensor *, Tensor *);
-Tensor *tensor_sub_s (Tensor *, Tensor *);
-Tensor *tensor_mul (Tensor *, Tensor *);
-Tensor *tensor_mul_s (Tensor *, Tensor *);
+Tensor* tensor_add (Tensor *, Tensor *);
+Tensor* tensor_add_s (Tensor *, Tensor *);
+Tensor* tensor_sub (Tensor *, Tensor *);
+Tensor* tensor_sub_s (Tensor *, Tensor *);
+Tensor* tensor_mul (Tensor *, Tensor *);
+Tensor* tensor_mul_s (Tensor *, Tensor *);
 
-Tensor *tensor_matmul (Tensor *, Tensor *);
+#ifdef MULTI_THREADING
+typedef struct {
+	Tensor *A;
+	Tensor *B;
+	Tensor *AB;
+	unsigned int index;
+	/* The following are required for the scheduler */
+	thread_scheduler_s *t_sch;
+	pthread_t my_id;
+	pthread_mutex_t *mutex;
+	pthread_cond_t *sf;
+} matmul_loop_s;
 
-float reduce_sum (Tensor *);
+void* matmul_loop_p_thread (void* args);
+#endif
+	
+void matmul_loop (Tensor*, Tensor*, Tensor*, unsigned int);
+Tensor* tensor_matmul (Tensor*, Tensor*);
+
+float reduce_sum (Tensor*);
 
 
 #endif
