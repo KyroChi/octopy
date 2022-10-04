@@ -25,8 +25,8 @@ PyObject *PyTensor_new (PyTypeObject *, PyObject *, PyObject *);
 int PyTensor_init (PyTensor *, PyObject *, PyObject *);
 
 PyObject *PyTensor_set_tensor_linear (PyTensor *, PyObject *);
-PyObject *PyTensor_get_tensor (PyTensor *, PyObject *, PyObject *);
-PyObject *PyTensor_set_tensor (PyTensor *, PyObject *, PyObject *);
+PyObject *PyTensor_get_tensor (PyTensor *, PyObject *);
+int PyTensor_set_tensor (PyTensor *, PyObject *, PyObject *);
 
 PyObject *PyTensor_to_ones (PyTensor *);
 

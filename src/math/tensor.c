@@ -138,6 +138,18 @@ check_index_validity (Tensor *T, unsigned int *idxs)
 	return 0;
 }
 
+Tensor*
+tensor_copy (Tensor* A) {
+	Tensor* out = new_tensor(A->rank, A->shape);
+	unsigned int ii;
+
+	for (ii = 0; ii < A->size; ii += 1) {
+		out->data[ii] = A->data[ii];
+	}
+
+	return out;
+}
+
 int
 check_same_size (Tensor *A, Tensor *B)
 {
@@ -279,6 +291,9 @@ zip_tensor_map_s (Tensor *A, Tensor*B,
 
 void
 matmul_loop (Tensor* A, Tensor* B, Tensor* AB, unsigned int ii)
+/**
+ * The inner for loop for the tensor multiplication.
+ */
 {
 	float sum;
 	unsigned int jj, kk;
@@ -321,6 +336,10 @@ matmul_loop (Tensor* A, Tensor* B, Tensor* AB, unsigned int ii)
 #ifdef MULTI_THREADING
 void*
 matmul_loop_p_thread (void* args)
+/**
+ * Wrapper for the matmul_loop function which can be used with a 
+ * thread_scheduler.
+ */
 {
 	matmul_loop_s *p = (matmul_loop_s*) args;
 
@@ -368,8 +387,15 @@ tensor_matmul (Tensor *A, Tensor *B)
 
 	Tensor *AB = new_tensor(new_rank, new_shape);
 	free(new_shape);
+#ifdef CUDA
+	// TODO: CUDA code goes here
+	printf("CUDA is not implemented\n");
+	exit(3);
+#endif
 
 #ifdef MULTI_THREADING
+	// TODO: decide if I should use multi-threading or not based
+	// on the size of the tensors.	
 	thread_scheduler_s *t_sch =
 		new_thread_scheduler(MAXIMUM_THREADS,
 				     sizeof(matmul_loop_s));
@@ -434,6 +460,18 @@ tensor_matmul (Tensor *A, Tensor *B)
 #endif
 
 	return AB;
+}
+
+Tensor *
+reshape (Tensor *A, unsigned int new_rank, int *new_shape)
+/*
+ * int ptr instead of unsigned int ptr to allow for negative indexing
+ * to infer dimension
+ */
+{
+	// This should only change the rank and shape, need to do
+	// math to infer new axes.
+	return NULL;
 }
 
 Tensor *

@@ -184,18 +184,12 @@ PyTensor_set_tensor_linear (PyTensor *self, PyObject *args)
 }
 
 PyObject *
-PyTensor_get_tensor (PyTensor *self, PyObject *args)
+PyTensor_get_tensor (PyTensor *self, PyObject *py_tuple)
 {
-	PyObject *py_tuple;
 	unsigned int *idxs;
 	float v;
 
 	// TODO: Python argument handling
-
-	if ( !PyArg_ParseTuple(args, "O", &py_tuple) ) {
-		// TODO: Set error flags. Failed Parse.
-		return NULL;
-	}
 
         if ( 0 > check_tuple_size(self, py_tuple) ) {
 		// Error set in call
@@ -218,39 +212,34 @@ PyTensor_get_tensor (PyTensor *self, PyObject *args)
 	return Py_BuildValue("f", v);
 }
 
-PyObject *
-PyTensor_set_tensor (PyTensor *self, PyObject *args, PyObject *kwargs)
+int
+PyTensor_set_tensor (PyTensor *self, PyObject *ind_tuple,
+		     PyObject *value)
 {
-	PyObject *py_tuple;
 	unsigned int *idxs;
 	float v;
 
-	if ( !PyArg_ParseTuple(args, "Of", &py_tuple, &v) ) {
-		// TODO: Set error flags. Failed parse.
-		PyErr_SetString(PyExc_Exception,
-				"Parse failure");
-		return NULL;
-	}
+	v = (float) PyFloat_AsDouble(value);
 
-	if ( 0 > check_tuple_size(self, py_tuple) ) {
+	if ( 0 > check_tuple_size(self, ind_tuple) ) {
 		// Error set in call
-		return NULL;
+		return -1;
 	}
 
-	idxs = get_idxs_from_PyTuple(py_tuple);
+	idxs = get_idxs_from_PyTuple(ind_tuple);
 
 	if ( 0 > check_index_validity(self->_tensor, idxs) ) {
 		PyErr_SetString(PyExc_IndexError,
 				"index out of bound for tensor");
-		return NULL;
+		return -1;
 	}
 	
 	set_tensor(self->_tensor, idxs, v);
 	
 	free(idxs);
-	Py_XDECREF(py_tuple);
+	/* Py_XDECREF(py_tuple); */
 	
-	return Py_None;
+	return 0;
 }
 
 PyObject *
@@ -282,6 +271,8 @@ PyTensor_assign_data_from_list (PyTensor *self, PyObject *args)
 /**
  * Assigns data from an unrolled list to a tensor. The parsing and
  * unrolling is done by the caller (probably in Python).
+ *
+ * TODO: List is indexed wrong, must swap the first two indicies.
  */
 {
 	PyObject *data;

@@ -2,11 +2,13 @@
 #include <stdlib.h>
 
 #include "../src/math/tensor.h"
+#include "../src/nn/sequential.h"
 #include "../src/threading.h"
 
 void run_tensor_tests (unsigned int *, unsigned int *);
 void tensor_to_ones_test (unsigned int *, unsigned int *);
 void tensor_mul_test (unsigned int *, unsigned int *);
+void run_sequential_net_tests (unsigned int *, unsigned int *);
 
 #ifdef MULTI_THREADING
 void run_threading_tests (unsigned int*, unsigned int *);
@@ -18,11 +20,17 @@ main ()
 #ifdef MULTI_THREADING
 	printf("Multithreading on\n");
 #endif
+#ifdef CUDA
+	// Check that a CUDA device is available. Otherwise
+	// print something like "failed to find GPU device" and exit.
+	printf("Using GPU device\n");
+#endif
 	
 	unsigned int passed = 0;
 	unsigned int failed = 0;
 
 	run_tensor_tests(&passed, &failed);
+	run_sequential_net_tests(&passed, &failed);
 
 #ifdef MULTI_THREADING
 	run_threading_tests(&passed, &failed);
@@ -141,6 +149,24 @@ tensor_mul_test (unsigned int *passed,
 	free_tensor(A);
 	free_tensor(A2);
 	*passed += 1;
+
+	return;
+}
+
+void
+run_sequential_net_tests (unsigned int *passed,
+			  unsigned int *failed)
+{
+	Layer* layers[] =
+		{
+			create_dense_layer(10, 30, INIT_DEFAULT),
+			create_activation_layer(ACT_TANH),
+			create_dense_layer(30, 10, INIT_DEFAULT),
+			create_activation_layer(ACT_TANH),
+			create_dense_layer(10, 1, INIT_DEFAULT),
+			create_activation_layer(ACT_SIGMOID)
+		};
+	Sequential* net = create_sequential_net(7, layers);
 
 	return;
 }

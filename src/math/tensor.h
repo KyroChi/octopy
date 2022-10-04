@@ -27,6 +27,8 @@ float get_tensor (Tensor *, unsigned int *);
 
 int check_index_validity (Tensor *, unsigned int *);
 
+Tensor* tensor_copy (Tensor*);
+
 /*
  * Mapping 
  * (includes relevant helper functions)
@@ -54,6 +56,8 @@ Tensor* tensor_sub (Tensor *, Tensor *);
 Tensor* tensor_sub_s (Tensor *, Tensor *);
 Tensor* tensor_mul (Tensor *, Tensor *);
 Tensor* tensor_mul_s (Tensor *, Tensor *);
+
+Tensor* reshape (Tensor*, unsigned int, int*);
 
 #ifdef MULTI_THREADING
 typedef struct {

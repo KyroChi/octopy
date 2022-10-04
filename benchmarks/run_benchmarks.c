@@ -9,11 +9,16 @@ run_tensor_matmul_bench ()
 {
 	// Takes about 3500 in second dimension for the parallel
 	// implementation to be faster.
+	//
+	// For the second axis in A:
 	// For 5000, the parallel is about twice as fast
 	// At 10k, we have linear: 5.1 seconds, parallel: 2.5
 	// At 15k, we have linear: 7.9 seconds, parallel: 4.4
 	// At 30k, we have linear: 20.71 seconds, parallel: 10.5
 	// So after 5000 we maintain about twice as fast.
+	//
+	// When changing the outer dimension the multithreaded version
+	// is waaaaayyyy slower... WHY?
 	unsigned int axesA[2] = {100, 5000};
 	Tensor *A = new_tensor(2, axesA);
 
@@ -38,6 +43,9 @@ run_tensor_matmul_bench ()
 	
 #ifdef MULTI_THREADING
 	printf("Parallel took %.8f seconds\n", elapsed);
+#else
+#ifdef CUDA
+	printf("CUDA took %.8f seconds\n", elapsed);
 #else
 	printf("Linear took %.8f seconds\n", elapsed);
 #endif
