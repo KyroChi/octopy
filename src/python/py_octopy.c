@@ -29,6 +29,11 @@ static PyMethodDef PyTensor_methods[] = {
 	 METH_NOARGS,
 	 "Dump Tensor data to an array"
 	},
+	{"_print",
+	 (PyCFunction) PyTensor_print,
+	 METH_NOARGS,
+	 "print the tensor"
+	},
 	{"_assign_data_from_list",
 	 (PyCFunction) PyTensor_assign_data_from_list,
 	 METH_VARARGS,

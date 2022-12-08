@@ -73,8 +73,44 @@ free_tensor (Tensor *T)
 }
 
 void
-print_tensor (Tensor *T)
+tensor_print (Tensor *T)
+/**
+ * I think that there is a better algorithm, this is sloooowww. 
+ * But you probably shouldn't print big tensors anyways.
+ *
+ * Currently only supports rank 1 or 2 tensors
+ */
 {
+	unsigned int *idxs = malloc(sizeof(unsigned int)*T->rank);
+	unsigned int ii;
+	
+	if (T->rank == 1) {
+		printf("[");
+		for (ii = 0; ii < T->size - 1; ii += 1) {
+			printf("%.2f,\t", T->data[ii]);
+		}
+		printf("%.2f]\n", T->data[T->size - 1]);
+	} else if (T->rank == 2) {
+		printf("[[");
+		for (ii = 0; ii < T->size - 1; ii += 1) {
+			get_index_idxs(T, ii, idxs);
+			if (idxs[0] + 1
+			    == T->shape[T->rank - 1]) {
+				printf("%.2f],\n", T->data[ii]);
+			} else {
+				if (idxs[0] == 0 && idxs[1] != 0) {
+					printf(" [%.2f\t",
+					       T->data[ii]);
+				} else {
+					printf("%.2f,\t",
+					       T->data[ii]);
+				}
+			}
+		}
+		printf("%.2f]]\n", T->data[T->size - 1]);
+	} else {
+		printf("Printing currently only supports rank 1 or 2 tensors\n");
+	}
 	return;
 }
 

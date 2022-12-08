@@ -251,8 +251,6 @@ PyTensor_scalar_mult (PyObject *self, PyObject *po)
 {
 	Tensor *T = ((PyTensor *) self)->_tensor;
 	float a = PyFloat_AsDouble(po);
-
-	void *ptr = T->shape;
 		
 	return (PyObject *)
 		new_PyTensor_from_tensor(scalar_multiply(T, a));
@@ -333,4 +331,11 @@ PyTensor_dump (PyTensor *self)
  */
 {
 	return NULL;
+}
+
+PyObject *
+PyTensor_print (PyTensor *self)
+{
+	tensor_print(self->_tensor);
+	return Py_None;
 }

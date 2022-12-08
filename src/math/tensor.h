@@ -29,6 +29,8 @@ int check_index_validity (Tensor *, unsigned int *);
 
 Tensor* tensor_copy (Tensor*);
 
+void tensor_print (Tensor*);
+
 /*
  * Mapping 
  * (includes relevant helper functions)

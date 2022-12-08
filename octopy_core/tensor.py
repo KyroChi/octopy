@@ -83,7 +83,6 @@ class Tensor(_Tensor):
         self.initialize = True
         return
 
-
 def ones(shape):
     if isinstance(shape, list):
         shape = tuple(shape)

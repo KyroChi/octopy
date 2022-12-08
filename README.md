@@ -17,8 +17,10 @@ o = ot.ones((4, 3))
 
 zo = z + o # add two tensors
 
-p = ot.Tensor([[2.1, 1.3, 2.2, 1.0],
-               [1.2, 1.1, 0.3, 0.2],
-	       [0.1, 2.3, 2.1, 1.6]])
-prod = o @ p # matrix multiplication
+# matrix multiplication
+A = ot.Tensor([[2, 1.5], [2, -1]])
+A2 = A @ A
+A2._print()
+# [[7.00, 1.50],
+#  [2.00  4.00]]
 ```
