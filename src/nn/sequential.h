@@ -31,6 +31,7 @@ typedef enum {
 typedef struct {
 	layer_t type;
 	Tensor *weights;
+	Tensor *bias;
 	activation_t activ;
 	/* Rank of input tensor */
 	unsigned int input_rank;
@@ -47,6 +48,17 @@ typedef struct {
 typedef struct {
 	// Hmmm.....
 } Optimizer;
+
+typedef struct {
+	activation_t activ;
+	float (*func) (float);   // The activation function
+	float (*func_d) (float); // It's derivative
+} Activation;
+
+float activ_identity (float);
+float activ_identity_d (float);
+
+Activation identity;
 
 typedef struct {
 	Layer** layers;

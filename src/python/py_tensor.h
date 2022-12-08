@@ -34,5 +34,6 @@ PyObject *PyTensor_mat_mul (PyObject *, PyObject *);
 PyObject *PyTensor_assign_data_from_list (PyTensor *, PyObject *);
 PyObject *PyTensor_matmul (PyTensor *, PyObject *);
 PyObject *PyTensor_dump (PyTensor *);
+PyObject *PyTensor_print (PyTensor *);
 
 #endif

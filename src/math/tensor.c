@@ -230,14 +230,11 @@ Tensor*
 scalar_multiply (Tensor* in, float a)
 {
 	// TODO: Merge with map
-	printf("called\n");
 	if (in->shape == NULL) {
 		printf("Issue\n");
 	}
-	printf("no seg fault yet\n");
 	
 	Tensor* out = new_tensor(in->rank, in->shape);
-	printf("no seg fault yet 2\n");
 	
 	unsigned int ii;
 	for (ii = 0; ii < in->size; ii += 1) {

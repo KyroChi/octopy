@@ -1,7 +1,18 @@
 #include <stdlib.h>
+#include <stdio.h>
 
+#include "../octopy_helper.h"
 #include "../math/tensor.h"
 #include "sequential.h"
+
+float activ_identity (float a) { return a; }
+float activ_identity_d (float a) { return 1.0; }
+
+Activation identity = {
+	.activ = ACT_IDENTITY,
+	.func = activ_identity,
+	.func_d = activ_identity_d,
+};
 
 void
 initializer (Tensor *T, initializer_t init)
@@ -18,6 +29,12 @@ layer_copy (Layer* in, Layer* out)
 	out->type = in->type;
 	// TODO: Standardize the copying across data types
 	out->weights = tensor_copy(in->weights);
+	out->activ = in->activ;
+	out->input_rank = in->input_rank;
+
+	unsigned int *o_shape = malloc(sizeof(unsigned int) * out->input_rank);
+	array_cpy_uint(in->input_shape, o_shape, out->input_rank);
+	out->input_shape = o_shape;
 
 	return;
 }
@@ -70,7 +87,7 @@ Sequential*
 create_sequential_net (unsigned int n_layers,
 		       Layer **layers)
 /*
- * Copies layers into a new array of layers
+ * Eats layers, i.e. copy by caller if needed in multiple places
  */
 {
 	Sequential* net = malloc( sizeof(net) );
@@ -83,8 +100,7 @@ create_sequential_net (unsigned int n_layers,
 	
 	unsigned int ii;
 	for (ii = 0; ii < n_layers; ii += 1) {
-		net->layers[ii] = malloc( sizeof(Layer) );
-	        layer_copy(layers[ii], net->layers[ii]);
+		net->layers[ii] = layers[ii];
 	}
 
 	return net;
@@ -100,14 +116,23 @@ feed_forward (Sequential* seq, unsigned int training,
  * activations: pointer to a Tensor**. Allocated by the function.
  */
 {
+	if (!input) {
+		// TODO: Error flags
+		printf("Must give non-null tensor-input\n");
+		return NULL;
+	}
+	
 	Tensor* output, *tmp;
 
 	output = tensor_copy(input);
 	
 	unsigned int ii;
 	for (ii = 0; ii < seq->n_layers; ii += 1) {
-		if (!training) {
-			tmp = evaluate_layer_not_training(seq->layers[ii], output);
+		tmp = evaluate_layer_not_training(seq->layers[ii],
+						  output);
+		if (training) {
+			activations[ii] = ;
+			derivatives[ii] = ;
 		}
 		// Also must do the activations.
 		free(output);
@@ -115,7 +140,7 @@ feed_forward (Sequential* seq, unsigned int training,
 		free(tmp);
 	}
 
-	return output;
+	return NULL;
 }
 
 Tensor*

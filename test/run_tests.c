@@ -32,7 +32,7 @@ main ()
 	unsigned int failed = 0;
 
 	run_tensor_tests(&passed, &failed);
-	/* run_sequential_net_tests(&passed, &failed); */
+	run_sequential_net_tests(&passed, &failed);
 
 #ifdef MULTI_THREADING
 	/* run_threading_tests(&passed, &failed); */
@@ -61,7 +61,6 @@ run_tensor_tests (unsigned int *passed, unsigned int *failed)
 
 	// Test setting and indexing into a tensor
 	test = get_tensor(t, axes);
-	printf("Test: %.2f\n", test);
 	set_tensor(t, axes, 1.3);
 	test = get_tensor(t, axes);
 	printf("Test: %.2f\n", test);
@@ -210,11 +209,18 @@ run_sequential_net_tests (unsigned int *passed,
 
 	Sequential* net = create_sequential_net(6, layers);
 
-	Tensor* input;
-	Tensor** activations, **derivatives;
+	Tensor* input = NULL;
+	Tensor** activations = NULL;
+	Tensor** derivatives = NULL;
+
+	unsigned int rank = 2;
+	unsigned int *axes = malloc(sizeof(unsigned int) * rank);
+    
+	input = new_tensor(rank, axes);
+	
 	Tensor* net_out = feed_forward(net, 0, input,
 				       activations,
-				       derivatives); 
+				       derivatives);
 
 	// I guess if we get here we have successfully run the tests?
 	*passed += 1;
