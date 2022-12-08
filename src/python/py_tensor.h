@@ -29,6 +29,8 @@ int PyTensor_set_tensor (PyTensor *, PyObject *, PyObject *);
 PyObject *PyTensor_to_ones (PyTensor *);
 
 PyObject *PyTensor_add_tensor (PyObject *, PyObject *);
+PyObject *PyTensor_scalar_mult (PyObject *, PyObject *);
+PyObject *PyTensor_mat_mul (PyObject *, PyObject *);
 PyObject *PyTensor_assign_data_from_list (PyTensor *, PyObject *);
 PyObject *PyTensor_matmul (PyTensor *, PyObject *);
 PyObject *PyTensor_dump (PyTensor *);

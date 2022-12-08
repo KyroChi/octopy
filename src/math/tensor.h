@@ -36,6 +36,7 @@ Tensor* tensor_copy (Tensor*);
 
 float one (float);
 void to_ones (Tensor *);
+Tensor *scalar_multiply (Tensor*, float);
 void _tensor_map_subroutine (Tensor *, Tensor *, float(*fun)(float));
 Tensor *zip_tensor_map (Tensor *, Tensor *,
 			float (*map_fun)(float, float));

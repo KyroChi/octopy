@@ -72,6 +72,12 @@ free_tensor (Tensor *T)
 	return;
 }
 
+void
+print_tensor (Tensor *T)
+{
+	return;
+}
+
 unsigned int
 get_index_linear (Tensor *T, unsigned int *idx)
 {
@@ -182,6 +188,27 @@ to_ones (Tensor *T)
 {
 	_tensor_map_subroutine(T, T, &one);
 	return;
+}
+
+Tensor* 
+scalar_multiply (Tensor* in, float a)
+{
+	// TODO: Merge with map
+	printf("called\n");
+	if (in->shape == NULL) {
+		printf("Issue\n");
+	}
+	printf("no seg fault yet\n");
+	
+	Tensor* out = new_tensor(in->rank, in->shape);
+	printf("no seg fault yet 2\n");
+	
+	unsigned int ii;
+	for (ii = 0; ii < in->size; ii += 1) {
+		out->data[ii] = a * in->data[ii];
+	}
+	
+	return out;
 }
 
 void

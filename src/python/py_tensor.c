@@ -233,15 +233,41 @@ PyTensor_to_ones (PyTensor *self)
 }
 
 PyObject *
-PyTensor_add_tensor (PyObject *self, PyObject *v)
+PyTensor_add_tensor (PyObject *s, PyObject *w)
 {
-	PyTensor* s = (PyTensor *) self;
-	PyTensor* w = (PyTensor *) v;
 	Tensor *sum;
-
-	sum = tensor_add_s(s->_tensor, w->_tensor);
+	sum = tensor_add_s(((PyTensor *) s)->_tensor,
+			   ((PyTensor *) w)->_tensor);
 
 	return (PyObject *) new_PyTensor_from_tensor(sum);
+}
+
+PyObject *
+PyTensor_scalar_mult (PyObject *self, PyObject *po)
+/* TODO: Only accepts po as type float. Do type error handling and
+ * also accept integers.
+ * 
+ */
+{
+	Tensor *T = ((PyTensor *) self)->_tensor;
+	float a = PyFloat_AsDouble(po);
+
+	void *ptr = T->shape;
+		
+	return (PyObject *)
+		new_PyTensor_from_tensor(scalar_multiply(T, a));
+}
+
+PyObject *
+PyTensor_mat_mul (PyObject *self, PyObject *T)
+{
+	Tensor *A = ((PyTensor *) self)->_tensor;
+	Tensor *B = ((PyTensor *) T)->_tensor;
+
+	// TODO: Size checking!!
+
+	return (PyObject *)
+		new_PyTensor_from_tensor(tensor_matmul(A, B));
 }
 
 PyObject *

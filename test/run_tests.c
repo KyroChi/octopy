@@ -8,6 +8,7 @@
 void run_tensor_tests (unsigned int *, unsigned int *);
 void tensor_copy_test (unsigned int *, unsigned int *);
 void tensor_to_ones_test (unsigned int *, unsigned int *);
+void tensor_scalar_mul_test (unsigned int *, unsigned int *);
 void tensor_mul_test (unsigned int *, unsigned int *);
 void run_sequential_net_tests (unsigned int *, unsigned int *);
 
@@ -31,7 +32,7 @@ main ()
 	unsigned int failed = 0;
 
 	run_tensor_tests(&passed, &failed);
-	run_sequential_net_tests(&passed, &failed);
+	/* run_sequential_net_tests(&passed, &failed); */
 
 #ifdef MULTI_THREADING
 	/* run_threading_tests(&passed, &failed); */
@@ -92,6 +93,7 @@ run_tensor_tests (unsigned int *passed, unsigned int *failed)
 
 	tensor_copy_test(passed, failed);
 	tensor_mul_test(passed, failed);
+	tensor_scalar_mul_test(passed, failed);
 	tensor_to_ones_test(passed, failed);
 
 	return;
@@ -137,6 +139,23 @@ tensor_to_ones_test (unsigned int *passed,
 
 	*passed += 1;
 	return;
+}
+
+void
+tensor_scalar_mul_test (unsigned int *passed,
+			unsigned int *failed)
+{
+	unsigned int axes[2] = {4, 4};
+	Tensor *A = new_tensor(2, axes);
+	to_ones(A);
+
+	Tensor *B = scalar_multiply(A, 3.0);
+	if (B->data[0] != 3.0) {
+		printf("Failed scalar multiply.");
+		*failed += 1;
+	} else {
+		*passed += 1;
+	}
 }
 
 void
@@ -198,7 +217,7 @@ run_sequential_net_tests (unsigned int *passed,
 				       derivatives); 
 
 	// I guess if we get here we have successfully run the tests?
-	*passed += 1
+	*passed += 1;
 	return;
 }
 

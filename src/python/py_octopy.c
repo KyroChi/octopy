@@ -44,6 +44,8 @@ static PyMappingMethods PyTensorMappingMethods = {
 
 static PyNumberMethods PyTensorNumberMethods = {
 	.nb_add = (binaryfunc) PyTensor_add_tensor,
+	.nb_multiply = (binaryfunc) PyTensor_scalar_mult,
+	.nb_matrix_multiply = (binaryfunc) PyTensor_mat_mul,
 };
 
 static PyTypeObject PyTensorType = {
@@ -85,7 +87,7 @@ new_PyTensor_from_tensor (Tensor *T)
 	PyTuple_SetItem(args, 1, py_shape);
 
 	PyTensor_init(res, args, NULL);
-	res->_tensor = T;
+	res->_tensor = tensor_copy(T);
 
 	Py_XDECREF(py_rank);
 	Py_XDECREF(py_shape);
