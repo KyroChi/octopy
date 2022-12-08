@@ -42,9 +42,13 @@ static PyMappingMethods PyTensorMappingMethods = {
 	.mp_ass_subscript = (objobjargproc) PyTensor_set_tensor,
 };
 
+static PyNumberMethods PyTensorNumberMethods = {
+	.nb_add = (binaryfunc) PyTensor_add_tensor,
+};
+
 static PyTypeObject PyTensorType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	.tp_name = "octopy._Tensor",
+	.tp_name = "_octopy._Tensor",
 	.tp_basicsize = sizeof(PyTensor),
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 	.tp_doc = "Tensor object",
@@ -54,18 +58,46 @@ static PyTypeObject PyTensorType = {
 	.tp_methods = PyTensor_methods,
 	.tp_members = PyTensor_members,
 	.tp_as_mapping = &PyTensorMappingMethods,
+	.tp_as_number = &PyTensorNumberMethods,
 };
 
 static PyModuleDef octopymodule = {
 	PyModuleDef_HEAD_INIT,
-	"octopy",
+	"_octopy",
 	"Tensor and machine learning library.",
 	-1,
 	NULL, NULL, NULL, NULL, NULL
 };
 
+PyTensor *
+new_PyTensor_from_tensor (Tensor *T)
+{
+	PyTensor *res = NULL;
+	PyObject *py_rank, *py_shape, *args;
+
+	res = (PyTensor *) PyTensor_new(&PyTensorType, NULL, NULL);
+	
+	py_rank = Py_BuildValue("i", (int) T->rank);
+	py_shape = get_PyTuple_from_idxs(T->rank, T->shape);
+
+	args = PyTuple_New(2);
+	PyTuple_SetItem(args, 0, py_rank);
+	PyTuple_SetItem(args, 1, py_shape);
+
+	PyTensor_init(res, args, NULL);
+	res->_tensor = T;
+
+	Py_XDECREF(py_rank);
+	Py_XDECREF(py_shape);
+	Py_XDECREF(args);
+
+	// TODO: Free memory
+
+	return res;
+}
+
 PyMODINIT_FUNC
-PyInit_octopy(void)
+PyInit__octopy(void)
 {
 	PyObject* m;
 

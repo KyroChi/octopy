@@ -2,33 +2,13 @@
  * Wrapper class for the C Tensor struct
  */
 
+#include <stdio.h>
+
 #include <Python.h>
 #include "structmember.h"
 
 #include "../math/tensor.h"
 #include "py_tensor.h"
-#include "py_octopy.h"
-
-PyTensor *
-new_PyTensor_from_tensor (Tensor *T)
-{
-	PyTensor *res;
-	PyObject *py_rank, *py_shape, *args;
-
-	res = (PyTensor *) PyTensor_new(&PyTensorType, NULL, NULL);
-	py_rank = Py_BuildValue("i", (int) T->rank);
-	py_shape = get_PyTuple_from_idxs(T->rank, T->shape);
-
-	args = PyTuple_New(2);
-	PyTuple_SetItem(args, 0, py_rank);
-	PyTuple_SetItem(args, 1, py_shape);
-	PyTensor_init(res, args, NULL);
-	res->_tensor = T;
-
-	// TODO: Free memory
-
-	return res;
-}
 
 unsigned int *
 get_idxs_from_PyTuple (PyObject *tuple)
@@ -83,7 +63,7 @@ check_tuple_size (PyTensor *T, PyObject *py_tuple)
 }
 
 void
-PyTensor_dealloc (PyTensor* self)
+PyTensor_dealloc (PyTensor *self)
 {
 	free_tensor(self->_tensor);
 	Py_XDECREF(self->shape);
@@ -96,15 +76,18 @@ PyObject *
 PyTensor_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyTensor *self = NULL;
-		
-	self = (PyTensor *)type->tp_alloc(type, 0);
 
-	if (self == NULL) {
-		return NULL;
-	}
+	self = (PyTensor *) type->tp_alloc(type, 0);
 
-	self->shape = NULL;
-	self->_tensor = NULL;
+	if (self != NULL) {
+		self->shape = Py_None;
+		if (self->shape == NULL) {
+			Py_DECREF(self);
+			return NULL;
+		}
+
+		self->_tensor = NULL;
+	}	
 
 	return (PyObject *) self;
 }
@@ -250,18 +233,13 @@ PyTensor_to_ones (PyTensor *self)
 }
 
 PyObject *
-PyTensor_add_tensor (PyTensor *self, PyObject *args)
+PyTensor_add_tensor (PyObject *self, PyObject *v)
 {
-	PyTensor *v;
+	PyTensor* s = (PyTensor *) self;
+	PyTensor* w = (PyTensor *) v;
 	Tensor *sum;
 
-	if ( !PyArg_ParseTuple(args, "O", &v) ) {
-		// TODO: Set error flags
-		return NULL;
-	}
-
-	sum = tensor_add_s(self->_tensor, v->_tensor);
-	Py_XDECREF(v);
+	sum = tensor_add_s(s->_tensor, w->_tensor);
 
 	return (PyObject *) new_PyTensor_from_tensor(sum);
 }
@@ -302,7 +280,6 @@ PyTensor_assign_data_from_list (PyTensor *self, PyObject *args)
 
 	return Py_None;
 }
-
 
 PyObject *
 PyTensor_matmul (PyTensor *self, PyObject *args)

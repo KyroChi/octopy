@@ -1,7 +1,7 @@
-from distutils.core import setup, Extension
+from setuptools import setup, Extension, find_packages
 
 octopy = Extension(
-    'octopy',
+    '_octopy',
     sources=[
         'src/math/tensor.c',
         'src/python/py_tensor.c',
@@ -12,7 +12,9 @@ octopy = Extension(
 
 setup(
     name='octopy',
-    version='0.1',
+    author='Kyle R. Chickering',
+    author_email='kyrochickering@gmail.com',
+    version='0.1.2',
     ext_modules=[octopy],
-    py_modules=['octopy/tensor']
+    packages=['octopy_core'],
 )

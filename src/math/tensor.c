@@ -139,10 +139,18 @@ check_index_validity (Tensor *T, unsigned int *idxs)
 }
 
 Tensor*
-tensor_copy (Tensor* A) {
-	Tensor* out = new_tensor(A->rank, A->shape);
-	unsigned int ii;
+tensor_copy (Tensor* A)
+{
 
+	if ( !A ) {
+		// If we are passed a NULL value return a NULL value.
+		// is this the desired behavior?
+		return NULL;
+	}
+	
+	Tensor* out = new_tensor(A->rank, A->shape);
+	
+	unsigned int ii;
 	for (ii = 0; ii < A->size; ii += 1) {
 		out->data[ii] = A->data[ii];
 	}

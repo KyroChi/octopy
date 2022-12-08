@@ -58,6 +58,7 @@ Sequential* create_sequential_net (unsigned int n_layers,
 				   Layer **layers);
 void free_sequential_net (Sequential*);
 
+void initializer (Tensor *, initializer_t);
 void layer_copy (Layer* in, Layer* out);
 
 Layer* create_dense_layer (unsigned int in_size,
