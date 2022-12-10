@@ -3,8 +3,8 @@
 #include "py_octopy.h"
 
 static PyMemberDef PyTensor_members[] = {
-	{"shape", T_OBJECT_EX, offsetof(PyTensor, shape), 0,
-	 "tuple containing size of axes"},
+	/* {"shape", T_OBJECT_EX, offsetof(PyTensor, shape), 0, */
+	/*  "tuple containing size of axes"}, */
 	{NULL} /* Sentinal */
 };
 
@@ -34,17 +34,21 @@ static PyMethodDef PyTensor_methods[] = {
 	 METH_NOARGS,
 	 "Dump Tensor data to an array"
 	},
-	{"_print",
-	 (PyCFunction) PyTensor_print,
-	 METH_NOARGS,
-	 "print the tensor"
-	},
 	{"_assign_data_from_list",
 	 (PyCFunction) PyTensor_assign_data_from_list,
 	 METH_VARARGS,
 	 "assign data from an unrolled list"
 	},
 	{NULL} /* Sentinal */
+};
+
+static PyGetSetDef PyTensorGettersSetters[] = {
+	{"shape",
+	 (getter) PyTensor_get_shape,
+	 (setter) PyTensor_set_shape,
+	 "shape",
+	 NULL},
+	{NULL}
 };
 
 static PyMappingMethods PyTensorMappingMethods = {
@@ -69,6 +73,8 @@ static PyTypeObject PyTensorType = {
 	.tp_dealloc = (destructor)PyTensor_dealloc,
 	.tp_methods = PyTensor_methods,
 	.tp_members = PyTensor_members,
+	.tp_str = PyTensor_as_string,
+	.tp_getset = PyTensorGettersSetters,
 	.tp_as_mapping = &PyTensorMappingMethods,
 	.tp_as_number = &PyTensorNumberMethods,
 };
@@ -92,15 +98,18 @@ new_PyTensor_from_tensor (Tensor *T)
 	py_rank = Py_BuildValue("i", (int) T->rank);
 	py_shape = get_PyTuple_from_idxs(T->rank, T->shape);
 
+	res->shape = py_shape;
+
 	args = PyTuple_New(2);
 	PyTuple_SetItem(args, 0, py_rank);
+	
 	PyTuple_SetItem(args, 1, py_shape);
 
 	PyTensor_init(res, args, NULL);
 	res->_tensor = tensor_copy(T);
 
 	Py_XDECREF(py_rank);
-	Py_XDECREF(py_shape);
+	/* Py_XDECREF(py_shape); */
 	Py_XDECREF(args);
 
 	// TODO: Free memory

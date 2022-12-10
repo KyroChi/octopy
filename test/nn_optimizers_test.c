@@ -27,7 +27,9 @@ SGD_update_test (unsigned int* passed,
 	unsigned int ii;
 	for (ii = 0; ii < z->size; ii += 1) {
 		if ( fabs(z->data[ii] - 0.1) > 0.0000001 ) {
-			printf("Failed SGD update test. Expected %.10f, got %.10f\n", 0.1, z->data[ii]);
+			printf("Failed SGD update test. "
+			       "Expected %.10f, got %.10f\n",
+			       0.1, z->data[ii]);
 			*failed += 1;
 			return;
 		}

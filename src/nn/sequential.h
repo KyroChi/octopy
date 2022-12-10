@@ -36,10 +36,19 @@ typedef struct {
 	Layer** layers;
 	unsigned int n_layers;
 	Optimizer *optimizer;
+	Tensor** activs;
+	Tensor** derivs;
 } Sequential;
 
 Sequential* create_sequential_net (unsigned int n_layers,
 				   Layer **layers);
+Sequential* create_sequential_net_basic (unsigned int,
+					 unsigned int,
+					 unsigned int,
+					 unsigned int,
+					 activation_t,
+					 activation_t,
+					 Optimizer*);
 void free_sequential_net (Sequential*);
 
 void initializer (Tensor *, initializer_t);
@@ -47,7 +56,7 @@ void layer_copy (Layer* in, Layer* out);
 
 Layer* create_dense_layer (unsigned int in_size,
 			   unsigned int out_size,
-			   initializer_t init);
+			   Initializer* init);
 Layer* create_flatten_layer (unsigned int *axes, unsigned int rank);
 Layer* create_activation_layer (activation_t activ);
 Layer* create_dropout_layer (float dropout);
@@ -62,8 +71,7 @@ void update_layer_weights(Layer* layer, Tensor* grads,
 			  Optimizer* opt);
 
 Tensor* feed_forward(Sequential* seq,
-		     unsigned int training, Tensor* input,
-		     Tensor** activations, Tensor** derivatives);
+		     unsigned int training, Tensor* input);
 Tensor** backprop(Sequential* seq, Tensor** activations);
 
 #endif

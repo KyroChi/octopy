@@ -22,6 +22,9 @@ void PyTensor_dealloc (PyTensor *);
 PyObject *PyTensor_new (PyTypeObject *, PyObject *, PyObject *);
 int PyTensor_init (PyTensor *, PyObject *, PyObject *);
 
+PyObject *PyTensor_get_shape (PyTensor *, void *);
+int PyTensor_set_shape (PyTensor *, PyObject *, void *);
+
 PyObject *PyTensor_set_tensor_linear (PyTensor *, PyObject *);
 PyObject *PyTensor_get_tensor (PyTensor *, PyObject *);
 int PyTensor_set_tensor (PyTensor *, PyObject *, PyObject *);
@@ -35,6 +38,6 @@ PyObject *PyTensor_mat_mul (PyObject *, PyObject *);
 PyObject *PyTensor_assign_data_from_list (PyTensor *, PyObject *);
 PyObject *PyTensor_matmul (PyTensor *, PyObject *);
 PyObject *PyTensor_dump (PyTensor *);
-PyObject *PyTensor_print (PyTensor *);
+PyObject *PyTensor_as_string (PyObject *);
 
 #endif

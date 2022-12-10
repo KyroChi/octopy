@@ -22,6 +22,7 @@ void free_tensor (Tensor *);
 
 unsigned int get_index_linear (Tensor *, unsigned int *);
 void get_index_idxs (Tensor *, unsigned int, unsigned int *);
+void increment_idxs (Tensor*, unsigned int*);
 
 void set_tensor (Tensor *, unsigned int *, float);
 float get_tensor (Tensor *, unsigned int *);
@@ -31,6 +32,7 @@ int check_index_validity (Tensor *, unsigned int *);
 Tensor* tensor_copy (Tensor*);
 
 void tensor_print (Tensor*);
+char* tensor_to_str (Tensor *);
 
 /*
  * Mapping 

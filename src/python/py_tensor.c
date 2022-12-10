@@ -32,19 +32,23 @@ get_idxs_from_PyTuple (PyObject *tuple)
 }
 
 PyObject *
-get_PyTuple_from_idxs (unsigned int rank, unsigned int *shape)
+get_PyTuple_from_idxs (unsigned int rank, unsigned int* shape)
 {
 	PyObject *py_tuple = PyTuple_New(rank);
+	PyObject *tmp = NULL;
 	
 	if ( !py_tuple ) {
 		// Set error flags
 		return NULL;
 	}
 
-	unsigned int ii;
+	unsigned int ii;	
 	for (ii = 0; ii < rank; ii += 1) {
-		PyTuple_SetItem(py_tuple, ii,
-				PyLong_FromLong(shape[ii]));
+		tmp = PyLong_FromLong(shape[ii]);
+		// PyTuple_SetItem eats a reference for some reason,
+		// so we increment the ref to the PyLong.
+		Py_INCREF(tmp);
+		PyTuple_SetItem(py_tuple, ii, tmp);
 	}
 
 	return py_tuple;
@@ -140,6 +144,20 @@ PyTensor_init (PyTensor *self, PyObject *args, PyObject *kwds)
 	self->_tensor = new_tensor(rank, shape);
 	self->_tensor->size = num_entries;
 
+	return 0;
+}
+
+PyObject *
+PyTensor_get_shape (PyTensor *self, void *closure)
+{
+	return get_PyTuple_from_idxs(self->_tensor->rank,
+				     self->_tensor->shape);
+}
+
+int
+PyTensor_set_shape (PyTensor* self, PyObject* value, void* closure)
+{
+	// TODO: Throw an error, shouldn't set shape!
 	return 0;
 }
 
@@ -343,8 +361,14 @@ PyTensor_dump (PyTensor *self)
 }
 
 PyObject *
-PyTensor_print (PyTensor *self)
+PyTensor_as_string (PyObject *self)
 {
-	tensor_print(self->_tensor);
-	return Py_None;
+	char *str = tensor_to_str(((PyTensor*)self)->_tensor);
+	PyObject *pstr = PyUnicode_FromString(str);
+	if ( !pstr ) {
+		// TODO: error flags
+		return NULL;
+	}
+	
+	return pstr;
 }

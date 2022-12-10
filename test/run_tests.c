@@ -224,9 +224,9 @@ run_sequential_net_tests (unsigned int *passed,
     
 	input = new_tensor(rank, axes);
 	
-	Tensor* net_out = feed_forward(net, 0, input,
-				       activations,
-				       derivatives);
+	/* Tensor* net_out = feed_forward(net, 0, input, */
+	/* 			       activations, */
+	/* 			       derivatives); */
 
 	// I guess if we get here we have successfully run the tests?
 	*passed += 1;

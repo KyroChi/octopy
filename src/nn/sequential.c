@@ -35,7 +35,7 @@ layer_copy (Layer* in, Layer* out)
 Layer*
 create_dense_layer (unsigned int in_size,
 		    unsigned int out_size,
-		    initializer_t init)
+		    Initializer* init)
 {
 	Layer* layer = malloc( sizeof(layer) );
 	if (!layer) {
@@ -48,7 +48,7 @@ create_dense_layer (unsigned int in_size,
 	unsigned int shape[2] = {in_size, out_size};
 	layer->weights = new_tensor(2, shape);
 	// TODO: Use initializer for the weights
-	initializer(layer->weights, init);
+	initialize_tensor(layer->weights, init);
 	
 	layer->activ = ACT_NONE;
 
@@ -99,11 +99,67 @@ create_sequential_net (unsigned int n_layers,
 	return net;
 }
 
+Sequential*
+create_sequential_net_basic (unsigned int n_layers,
+			     unsigned int hidden_dim,
+			     unsigned int in_dim,
+			     unsigned int out_dim,
+			     activation_t hidden_activ_type,
+			     activation_t output_activ_type,
+			     Optimizer* optimizer)
+/**
+ * Currently uses uniform initialization by default.
+ */
+{
+	Layer** layers = malloc( sizeof(Layer*) * 2 *n_layers );
+	Tensor** activations = malloc( sizeof(Tensor *) * n_layers);
+	Tensor** derivatives = malloc( sizeof(Tensor *) * n_layers);
+
+	layers[0] =
+		create_dense_layer(in_dim,
+				   hidden_dim,
+				   &initializer_symmetric_uniform);
+
+	unsigned int rank = 2;
+	unsigned int *shape = malloc( sizeof(unsigned int) * rank );
+	shape[0] = in_dim;
+	shape[1] = hidden_dim;
+			
+	activations[0] = new_tensor(rank, shape);
+	derivatives[0] = new_tensor(rank, shape);
+
+	shape[0] = hidden_dim;
+
+	unsigned int ii;
+	for (ii = 1; ii < 2 * n_layers - 1; ii += 2) {
+		layers[ii] =
+			create_activation_layer(hidden_activ_type);
+		layers[ii + 1] =
+			create_dense_layer(hidden_dim,
+					   hidden_dim,
+					   &initializer_symmetric_uniform);
+		activations[(ii - 1)/2] = new_tensor(rank, shape);
+		derivatives[(ii - 1)/2] = new_tensor(rank, shape);
+	}
+
+	layers[2 * n_layers - 1] =
+		create_activation_layer(output_activ_type);
+
+	shape[1] = out_dim;
+	activations[n_layers - 1] = new_tensor(rank, shape);
+	derivatives[n_layers - 1] = new_tensor(rank, shape);
+
+	Sequential* net = create_sequential_net(2 * n_layers,
+						layers);
+	net->activs = activations;
+	net->derivs = derivatives;
+	net->optimizer = optimizer;
+
+	return net;
+}
+
 Tensor*
-feed_forward (Sequential* seq, unsigned int training,
-	      Tensor *input,
-	      Tensor** activations,
-	      Tensor** derivatives)
+feed_forward (Sequential* seq, unsigned int training, Tensor *input)
 /**
  * training: 0 or 1. 0 means not training, 1 means training.
  * activations: pointer to a Tensor**. Allocated by the function.
@@ -128,11 +184,11 @@ feed_forward (Sequential* seq, unsigned int training,
 		
 		if (training) {
 			_tensor_map_subroutine(tmp,
-					       activations[ii],
+					       seq->activs[ii],
 					       get_activ(lptr->activ));
 			
 			_tensor_map_subroutine(tmp,
-					       derivatives[ii],
+					       seq->derivs[ii],
 					       get_deriv(lptr->activ));
 		}
 		

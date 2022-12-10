@@ -60,6 +60,7 @@ class Tensor(_Tensor):
     def _as_empty(self, ndim: int, dims: tuple):
         super(Tensor, self).__init__(ndim, dims)
         self.initialized = True
+        self.shape = dims
         return
 
     def _build_tensor(self, data):
@@ -79,6 +80,8 @@ class Tensor(_Tensor):
         self._assign_data_from_list(
             unroll_nested_list(data, [])
         )
+
+        self.shape = tuple(axes)
 
         self.initialize = True
         return
@@ -113,5 +116,6 @@ def rand(shape):
     """
     shape = _safe_shape(shape)
     T = Tensor()
+    T._as_empty(len(shape), shape)
     T._to_rand()
     return T

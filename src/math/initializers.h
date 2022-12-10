@@ -19,8 +19,8 @@ typedef struct {
 	float (*func) (float, float);
 } Initializer;
 
-Initializer initializer_default_uniform;
-Initializer initializer_symmetric_uniform;
+extern Initializer initializer_default_uniform;
+extern Initializer initializer_symmetric_uniform;
 
 void _tensor_map_initializer (Tensor*, float (*)(float, float),
 			      float, float);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 
 #include "../octopy_helper.h"
@@ -81,6 +82,102 @@ free_tensor (Tensor *T)
 	return;
 }
 
+char*
+tensor_to_str (Tensor *T)
+/**
+ * Create a pretty print string for T.
+ */
+{
+	unsigned int *idxs =
+		malloc( sizeof(unsigned int) * T->rank );
+
+	unsigned int newline = 0;
+	unsigned int end = 0;
+	unsigned int n_spaces = 0;
+
+	unsigned int ii, jj, kk, ind;
+	for (ii = 0; ii < T->rank; ii += 1) {
+		idxs[ii] = 0;
+	}
+
+	// TODO: Issue with buffer size!
+	char *str = malloc( sizeof(char) * 10000);
+	char *cat = malloc( sizeof(char) * 1000);
+	
+	for (ii = 0; ii < T->rank; ii += 1) {
+		strcat(str, "[");
+	}
+
+	unsigned int curr_ind = 0;
+	
+	for (ii = 0; ii < T->size; ii += 1) {
+		curr_ind = get_index_linear(T, idxs);
+		if ( !sprintf(cat, "%.3f", T->data[curr_ind]) ) {
+			// TODO: Set error flags
+			return NULL;
+		}
+
+		strcat(str, cat);
+
+		n_spaces = 0;
+		for (jj = 0; jj < T->rank; jj += 1) {
+			ind = T->rank - 1 - jj;			
+			if ( ind == T->rank - 1
+			     && T->shape[ind] - 1 == idxs[ind] ) {
+				newline = 1;
+			}
+		}
+
+		increment_idxs (T, idxs);
+
+		// Check if we are done printing or not. We are done
+		// when idxs rolls over to (0, ..., 0).
+		end = 1;
+		for (jj = 0; jj < T->rank; jj += 1) {
+			if ( idxs[jj] != 0 ) {
+				end = 0;
+			}
+		}
+
+		if ( !end ) {
+			for (jj = 0; jj < T->rank; jj += 1) {
+				ind = T->rank - 1 - jj;
+				if ( idxs[ind] == 0 ) {
+					if (newline) {
+						n_spaces += 1;
+						strcat(str, "]");
+					}
+				} else { break; }
+			}
+		}
+
+		if ( newline && !end) {
+			strcat(str, ",\n");
+			if ( n_spaces == T->rank - 1
+			     && T->rank != 2) {
+				strcat(str, "\n");
+			}
+			
+			for (jj = 0;
+			     jj < T->rank - n_spaces; jj += 1) {
+				strcat(str, " ");
+			}
+			for (jj = 0; jj < n_spaces; jj += 1) {
+				strcat(str, "[");
+			}
+			newline = 0;		      
+		} else if (!end) {
+			strcat(str, ", ");
+		} else { // end
+			for (jj = 0; jj < T->rank; jj += 1) {
+				strcat(str, "]");
+			}
+		}
+	}
+	
+	return str;
+}
+
 void
 tensor_print (Tensor *T)
 /**
@@ -90,36 +187,7 @@ tensor_print (Tensor *T)
  * Currently only supports rank 1 or 2 tensors
  */
 {
-	unsigned int *idxs = malloc(sizeof(unsigned int)*T->rank);
-	unsigned int ii;
-	
-	if (T->rank == 1) {
-		printf("[");
-		for (ii = 0; ii < T->size - 1; ii += 1) {
-			printf("%.2f,\t", T->data[ii]);
-		}
-		printf("%.2f]\n", T->data[T->size - 1]);
-	} else if (T->rank == 2) {
-		printf("[[");
-		for (ii = 0; ii < T->size - 1; ii += 1) {
-			get_index_idxs(T, ii, idxs);
-			if (idxs[0] + 1
-			    == T->shape[T->rank - 1]) {
-				printf("%.2f],\n", T->data[ii]);
-			} else {
-				if (idxs[0] == 0 && idxs[1] != 0) {
-					printf(" [%.2f\t",
-					       T->data[ii]);
-				} else {
-					printf("%.2f,\t",
-					       T->data[ii]);
-				}
-			}
-		}
-		printf("%.2f]]\n", T->data[T->size - 1]);
-	} else {
-		printf("Printing currently only supports rank 1 or 2 tensors\n");
-	}
+	printf("%s\n", tensor_to_str(T));	
 	return;
 }
 
@@ -148,6 +216,31 @@ get_index_idxs (Tensor *T, unsigned int index, unsigned int *idx)
 
 	idx[ii] = index;
 	
+	return;
+}
+
+void
+increment_idxs (Tensor* T, unsigned int* idx)
+/* Step the index shape by 1, i.e. for shape (3, 2), 
+ * idx = (1, 1) -> (2, 0) 
+ */
+{
+	unsigned int carry = 1;	
+	unsigned int ii, ind;
+	for (ii = 0; ii < T->rank; ii += 1) {
+		ind = T->rank - 1 - ii;
+		if ( carry ) {
+			idx[ind] = idx[ind] += 1;
+		}
+		
+		if ( idx[ind] == T->shape[ind] ) {
+			idx[ind] = 0;
+			carry = 1;
+		} else {
+			carry = 0;
+		}
+	}
+
 	return;
 }
 
@@ -452,7 +545,6 @@ matmul_loop (Tensor* A, Tensor* B, Tensor* AB, unsigned int ii)
 		}
 
 		A_idxs[kk] = jj;
-
 		B_idxs[0] = jj;
 			
 		for (kk = 1; kk < B->rank; kk += 1) {
