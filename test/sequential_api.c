@@ -3,8 +3,8 @@
 
 #include "../src/math/tensor.h"
 #include "../src/nn/sequential.h"
-
 #include "../src/nn/activation.h"
+#include "../src/nn/optimizers.h"
 
 int
 main ()
@@ -65,7 +65,7 @@ main ()
 	shape[2] = in_dim;
 	
 	Tensor* input = new_tensor(rank, shape);
-	initialize_tensor(input, &initializer_default_uniform);
+	initialize_tensor(input, &initializer_symmetric_uniform);
 
 	printf("random: %.3f\n", input->data[0]);
 
@@ -75,5 +75,12 @@ main ()
 				       input,
 				       activations,
 				       derivatives);
+
+	unsigned int epochs = 10;
+
+	Optimizer* opt = build_optimizer(OPT_SGD, 0.1, NULL);
+	optimizer_update(opt, layers[0]->weights, derivatives[0]);
+	
+	
 	return 1;
 }

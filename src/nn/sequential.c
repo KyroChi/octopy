@@ -144,6 +144,13 @@ feed_forward (Sequential* seq, unsigned int training,
 	return NULL;
 }
 
+void
+back_propogate (Sequential* net, Tensor* loss, Optimizer* opt,
+		Tensor** activations, Tensor** derivatives)
+{
+	return;
+}
+
 Tensor*
 evaluate_layer_not_training (Layer* layer, Tensor* Input)
 {

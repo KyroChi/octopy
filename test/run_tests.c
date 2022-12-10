@@ -6,6 +6,8 @@
 #include "../src/threading.h"
 #include "../src/math/random.h"
 
+#include "octopy_test.h"
+
 void run_tensor_tests (unsigned int *, unsigned int *);
 void tensor_copy_test (unsigned int *, unsigned int *);
 void tensor_to_ones_test (unsigned int *, unsigned int *);
@@ -36,6 +38,7 @@ main ()
 	run_tensor_tests(&passed, &failed);
 	/* run_sequential_net_tests(&passed, &failed); */
 	run_random_tests(&passed, &failed);
+	run_nn_optimizers_tests(&passed, &failed);
 
 #ifdef MULTI_THREADING
 	/* run_threading_tests(&passed, &failed); */

@@ -83,11 +83,16 @@ class Tensor(_Tensor):
         self.initialize = True
         return
 
-def ones(shape):
+def _safe_shape(shape):
     if isinstance(shape, list):
-        shape = tuple(shape)
+        return tuple(shape)
     elif not isinstance(shape, tuple):
         raise Exception('Shape must be list or tuple.')
+
+    return shape
+
+def ones(shape):
+    shape = _safe_shape(shape)
 
     T = Tensor()
     T._as_empty(len(shape), shape)
@@ -95,12 +100,18 @@ def ones(shape):
     return T
 
 def zeros(shape):
-    if isinstance(shape, list):
-        shape = tuple(shape)
-    elif not isinstance(shape, tuple):
-        raise Exception('Shape must be list or tuple.')
+    shape = _safe_shape(shape)
 
     T = Tensor()
     T._as_empty(len(shape), shape)
     
+    return T
+
+def rand(shape):
+    """
+    Create a tensor with entries drawn from a uniform distribution.
+    """
+    shape = _safe_shape(shape)
+    T = Tensor()
+    T._to_rand()
     return T

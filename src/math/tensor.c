@@ -5,6 +5,7 @@
 #include "../octopy_helper.h"
 #include "../threading.h"
 #include "tensor.h"
+#include "initializers.h"
 
 Tensor *
 new_tensor (unsigned int rank, unsigned int *shape)
@@ -59,6 +60,14 @@ new_tensor (unsigned int rank, unsigned int *shape)
 	}
 
 	return ptr;
+}
+
+Tensor *
+new_rand_tensor(unsigned int rank, unsigned int *shape)
+{
+	Tensor *T = new_tensor(rank, shape);
+	initialize_tensor(T, &initializer_default_uniform);
+	return T;
 }
 
 void
@@ -232,6 +241,7 @@ scalar_multiply (Tensor* in, float a)
 	// TODO: Merge with map
 	if (in->shape == NULL) {
 		printf("Issue\n");
+		return NULL;
 	}
 	
 	Tensor* out = new_tensor(in->rank, in->shape);
@@ -245,6 +255,22 @@ scalar_multiply (Tensor* in, float a)
 }
 
 void
+scalar_multiply_inplace (Tensor* in, float a)
+{
+	if (in->shape == NULL) {
+		printf("Issue\n");
+		return;
+	}
+
+	unsigned int ii;
+	for (ii = 0; ii < in->size; ii += 1) {
+		in->data[ii] = a * in->data[ii];
+	}
+
+	return;
+}
+
+void
 _tensor_map_subroutine (Tensor *in, Tensor* out,
 			float (*map_fun)(float))
 /**
@@ -253,7 +279,7 @@ _tensor_map_subroutine (Tensor *in, Tensor* out,
 // TODO: Optimize
 {
 	// TODO: Check that in and out are same dimension
-	// fast for inpace: check that they are same pointer
+	// fast for inplace: check that they are same pointer
 	float a;
 
 	// This loop avoids having to index into the tensor.
@@ -289,45 +315,90 @@ zip_tensor_map (Tensor *A, Tensor*B,
 	return res;
 }
 
+void
+zip_tensor_map_inplace (Tensor *A, Tensor*B,
+			float (*map_fun)(float, float))
+/**
+ * Assumes that the caller has checked that sizes match.
+ * Call zip_tensor_map_s for safe call.
+ *
+ * Replaces A by mapfun(A, B). Faster than calling
+ * zip_tensor_map if you don't need A to be kept.
+ */
+// TODO: Optimize
+{
+	unsigned int ii;
+	for (ii = 0; ii < A->size; ii += 1) {
+		A->data[ii] = map_fun(A->data[ii], B->data[ii]);
+	}
+
+	return;
+}
+
+void
+zip_tensor_map_inplace_s (Tensor* A, Tensor* B,
+			  float (*map_fun)(float, float))
+{
+	if ( 0 > check_same_size(A, B) ) {
+		// TODO: Set error flag
+		return;
+	}
+
+	zip_tensor_map_inplace(A, B, map_fun);
+	return;
+}
+
 float add (float a, float b) { return a + b; }
 float sub (float a, float b) { return a - b; }
 float mul (float a, float b) { return a * b; }
 
 Tensor *
 tensor_add (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map(A, B, &add);
-}
+{ return zip_tensor_map(A, B, &add); }
 
 Tensor *
 tensor_add_s (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map_s(A, B, &add);
-}
+{ return zip_tensor_map_s(A, B, &add); }
+
+void
+tensor_add_inplace (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace(A, B, &add); }
+
+void
+tensor_add_inplace_s (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace_s(A, B, &add); }
 
 Tensor *
 tensor_sub (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map(A, B, &sub);
-}
+{ return zip_tensor_map(A, B, &sub); }
 
 Tensor *
 tensor_sub_s (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map_s(A, B, &sub);
-}
+{ return zip_tensor_map_s(A, B, &sub); }
+
+void
+tensor_sub_inplace (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace(A, B, &sub); }
+
+void
+tensor_sub_inplace_s (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace_s(A, B, &sub); }
 
 Tensor *
 tensor_mul (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map(A, B, &mul);
-}
+{ return zip_tensor_map(A, B, &mul); }
 
 Tensor *
 tensor_mul_s (Tensor *A, Tensor *B)
-{
-	return zip_tensor_map_s(A, B, &mul);
-}
+{ return zip_tensor_map_s(A, B, &mul); }
+
+void
+tensor_mul_inplace (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace(A, B, &mul); }
+
+void
+tensor_mul_inplace_s (Tensor *A, Tensor *B)
+{ return zip_tensor_map_inplace_s(A, B, &mul); }
 
 float
 reduce_sum (Tensor *A)

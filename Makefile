@@ -3,17 +3,20 @@ CC = cc
 FLAGS = -Wall -Werror -Wextra -pedantic
 DEBUG = -g
 
-MATH = 		src/math/tensor.c \
-		src/math/initializers.c \
+MATH = 		src/math/initializers.c \
 		src/math/random.c \
+		src/math/tensor.c \
 		src/math/mtwister/mtwister.c
 
 NN = 		src/nn/activation.c \
-		src/nn/sequential.c 
+		src/nn/losses.c \
+		src/nn/optimizers.c \
+		src/nn/sequential.c
 
 BENCH =		benchmarks/run_benchmarks.c
 
 TEST = 		test/run_tests.c \
+		test/nn_optimizers_test.c
 
 HELP =		src/octopy_helper.c \
 		src/threading.c
@@ -36,3 +39,6 @@ bench: $(OBJECTS)
 
 bench_mt: $(OBJECTS)
 	$(CC) $(BENCH) $(MATH) $(HELP) -o bench_mt.o $(MULTITHREAD)
+
+module:
+	python setup.py build; python setup.py install

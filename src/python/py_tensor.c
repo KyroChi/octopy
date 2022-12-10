@@ -8,6 +8,7 @@
 #include "structmember.h"
 
 #include "../math/tensor.h"
+#include "../math/initializers.h"
 #include "py_tensor.h"
 
 unsigned int *
@@ -229,6 +230,14 @@ PyObject *
 PyTensor_to_ones (PyTensor *self)
 {
 	to_ones(self->_tensor);
+	return Py_None;
+}
+
+PyObject *
+PyTensor_to_rand (PyTensor *self)
+{
+	initialize_tensor(self->_tensor,
+			  &initializer_default_uniform);
 	return Py_None;
 }
 

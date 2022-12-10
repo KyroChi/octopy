@@ -5,6 +5,7 @@
 #include "../math/initializers.h"
 
 #include "activation.h"
+#include "optimizers.h"
 
 typedef enum {
 	LAY_INPUT,
@@ -30,10 +31,6 @@ typedef struct {
 	 */
 	unsigned int* input_shape;
 } Layer;
-
-typedef struct {
-	// Hmmm.....
-} Optimizer;
 
 typedef struct {
 	Layer** layers;

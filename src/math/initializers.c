@@ -4,6 +4,13 @@
 
 Initializer initializer_default_uniform = {
 	.type = INIT_UNIFORM,
+	.p1 = 0,
+	.p2 = 1,
+	.func = &rand_uniform,
+};
+
+Initializer initializer_symmetric_uniform = {
+	.type = INIT_UNIFORM,
 	.p1 = -1,
 	.p2 = 1,
 	.func = &rand_uniform,

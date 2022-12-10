@@ -24,6 +24,11 @@ static PyMethodDef PyTensor_methods[] = {
 	 METH_VARARGS,
 	 "Set all entries to 1."
 	},
+	{"_to_rand",
+	 (PyCFunction) PyTensor_to_rand,
+	 METH_VARARGS,
+	 "Entries are sampled from a uniform distribution."
+	},
 	{"_dump",
 	 (PyCFunction) PyTensor_dump,
 	 METH_NOARGS,

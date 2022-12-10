@@ -4,8 +4,11 @@ octopy = Extension(
     '_octopy',
     sources=[
         'src/math/tensor.c',
-        'src/python/py_tensor.c',
+        'src/math/initializers.c',
+        'src/math/random.c',
+        'src/math/mtwister/mtwister.c',
         'src/octopy_helper.c',
+        'src/python/py_tensor.c',
         'src/python/py_octopy.c',
     ]
 )

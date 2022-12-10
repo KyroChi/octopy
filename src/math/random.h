@@ -12,9 +12,9 @@
 // _RAND_SEED = seedRand(your_number), then set _RNG_SEEDED = 1.
 // This will globally set the seed and make your program
 // deterministic.
-unsigned int _RNG_SEEDED;
-time_t _SEED;
-MTRand _RAND_SEED;
+extern unsigned int _RNG_SEEDED;
+extern time_t _SEED;
+extern MTRand _RAND_SEED;
 
 float _rand_uniform ();
 float _rand_normal ();

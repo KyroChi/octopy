@@ -17,6 +17,7 @@ typedef struct {
  * (also includes relevant helper functions)
  */
 Tensor *new_tensor (unsigned int, unsigned int *);
+Tensor *new_rand_tensor(unsigned int, unsigned int *);
 void free_tensor (Tensor *);
 
 unsigned int get_index_linear (Tensor *, unsigned int *);
@@ -39,11 +40,16 @@ void tensor_print (Tensor*);
 float one (float);
 void to_ones (Tensor *);
 Tensor *scalar_multiply (Tensor*, float);
+void scalar_multiply_inplace (Tensor*, float);
 void _tensor_map_subroutine (Tensor *, Tensor *, float(*fun)(float));
 Tensor *zip_tensor_map (Tensor *, Tensor *,
 			float (*map_fun)(float, float));
 Tensor *zip_tensor_map_s (Tensor *, Tensor *,
 			  float (*map_fun)(float, float));
+void zip_tensor_map_inplace (Tensor *, Tensor*,
+			     float (*map_fun)(float, float));
+void zip_tensor_map_inplace_s (Tensor *, Tensor*,
+			       float (*map_fun)(float, float));
 
 /*
  * Tensor algebra
@@ -55,10 +61,18 @@ float mul (float, float);
 
 Tensor* tensor_add (Tensor *, Tensor *);
 Tensor* tensor_add_s (Tensor *, Tensor *);
+void tensor_add_inplace (Tensor*, Tensor*);
+void tensor_add_inplace_s (Tensor*, Tensor*);
+
 Tensor* tensor_sub (Tensor *, Tensor *);
 Tensor* tensor_sub_s (Tensor *, Tensor *);
+void tensor_sub_inplace (Tensor*, Tensor*);
+void tensor_sub_inplace_s (Tensor*, Tensor*);
+
 Tensor* tensor_mul (Tensor *, Tensor *);
 Tensor* tensor_mul_s (Tensor *, Tensor *);
+void tensor_mul_inplace (Tensor*, Tensor*);
+void tensor_mul_inplace_s (Tensor*, Tensor*);
 
 Tensor* reshape (Tensor*, unsigned int, int*);
 
