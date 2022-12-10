@@ -2,23 +2,9 @@
 #define SEQUENTIAL_H
 
 #include "../math/tensor.h"
+#include "../math/initializers.h"
 
-typedef enum {
-	INIT_DEFAULT,
-	INIT_GAUSSIAN,
-	INIT_UNIFORM,
-	INIT_GLOROT,
-	INIT_HE,
-} initializer_t;
-
-typedef enum {
-	ACT_IDENTITY,
-	ACT_TANH,
-	ACT_RELU,
-	ACT_LEAKY_RELU,
-	ACT_SIGMOID,
-	ACT_NONE,
-} activation_t;
+#include "activation.h"
 
 typedef enum {
 	LAY_INPUT,
@@ -48,17 +34,6 @@ typedef struct {
 typedef struct {
 	// Hmmm.....
 } Optimizer;
-
-typedef struct {
-	activation_t activ;
-	float (*func) (float);   // The activation function
-	float (*func_d) (float); // It's derivative
-} Activation;
-
-float activ_identity (float);
-float activ_identity_d (float);
-
-Activation identity;
 
 typedef struct {
 	Layer** layers;

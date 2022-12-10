@@ -1,0 +1,3 @@
+[submodule "src/math/mtwister"]
+	path = src/math/mtwister
+	url = https://github.com/ESultanik/mtwister

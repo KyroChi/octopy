@@ -4,6 +4,7 @@
 #include "../src/math/tensor.h"
 #include "../src/nn/sequential.h"
 #include "../src/threading.h"
+#include "../src/math/random.h"
 
 void run_tensor_tests (unsigned int *, unsigned int *);
 void tensor_copy_test (unsigned int *, unsigned int *);
@@ -11,6 +12,7 @@ void tensor_to_ones_test (unsigned int *, unsigned int *);
 void tensor_scalar_mul_test (unsigned int *, unsigned int *);
 void tensor_mul_test (unsigned int *, unsigned int *);
 void run_sequential_net_tests (unsigned int *, unsigned int *);
+void run_random_tests (unsigned int *, unsigned int *);
 
 #ifdef MULTI_THREADING
 void run_threading_tests (unsigned int*, unsigned int *);
@@ -32,7 +34,8 @@ main ()
 	unsigned int failed = 0;
 
 	run_tensor_tests(&passed, &failed);
-	run_sequential_net_tests(&passed, &failed);
+	/* run_sequential_net_tests(&passed, &failed); */
+	run_random_tests(&passed, &failed);
 
 #ifdef MULTI_THREADING
 	/* run_threading_tests(&passed, &failed); */
@@ -224,6 +227,46 @@ run_sequential_net_tests (unsigned int *passed,
 
 	// I guess if we get here we have successfully run the tests?
 	*passed += 1;
+	return;
+}
+
+void
+run_random_tests (unsigned int* passed, unsigned int* failed)
+{
+	float r;
+	unsigned int ii;
+	unsigned int bounds_good = 1;
+	for (ii = 0; ii < 1000; ii += 1) {
+		r = _rand_uniform();
+		if ( r < 0 || r > 1 ) {
+			bounds_good = 0;
+			printf("Failed _rand_uniform test\n");
+			break;
+		}
+	}
+
+	if ( bounds_good ) {
+		*passed += 1;
+	} else {
+		*failed += 1;
+	}
+
+	for (ii = 0; ii < 1000; ii += 1) {
+		r = rand_uniform(-1, 1);
+		if ( r < -1 || r > 1 ) {
+			bounds_good = 0;
+			printf("Failed rand_uniform test\n");
+			printf("r=%.3f\n", r);
+			break;
+		}
+	}
+
+	if ( bounds_good ) {
+		*passed += 1;
+	} else {
+		*failed += 1;
+	}
+
 	return;
 }
 

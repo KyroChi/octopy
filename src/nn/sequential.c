@@ -3,16 +3,9 @@
 
 #include "../octopy_helper.h"
 #include "../math/tensor.h"
+
+#include "activation.h"
 #include "sequential.h"
-
-float activ_identity (float a) { return a; }
-float activ_identity_d (float a) { return 1.0; }
-
-Activation identity = {
-	.activ = ACT_IDENTITY,
-	.func = activ_identity,
-	.func_d = activ_identity_d,
-};
 
 void
 initializer (Tensor *T, initializer_t init)
@@ -125,16 +118,24 @@ feed_forward (Sequential* seq, unsigned int training,
 	Tensor* output, *tmp;
 
 	output = tensor_copy(input);
+
+	Layer* lptr = NULL;
 	
 	unsigned int ii;
 	for (ii = 0; ii < seq->n_layers; ii += 1) {
-		tmp = evaluate_layer_not_training(seq->layers[ii],
-						  output);
+		lptr = seq->layers[ii];
+		tmp = evaluate_layer_not_training(lptr, output);
+		
 		if (training) {
-			activations[ii] = ;
-			derivatives[ii] = ;
+			_tensor_map_subroutine(tmp,
+					       activations[ii],
+					       get_activ(lptr->activ));
+			
+			_tensor_map_subroutine(tmp,
+					       derivatives[ii],
+					       get_deriv(lptr->activ));
 		}
-		// Also must do the activations.
+		
 		free(output);
 		output = tmp;
 		free(tmp);
