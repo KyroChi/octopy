@@ -24,3 +24,5 @@ A2._print()
 # [[7.00, 1.50],
 #  [2.00  4.00]]
 ```
+
+Currently random numbers are generated using Evan Sultanik's [Mersenne Twister](https://github.com/ESultanik/mtwister/tree/5b9ae08dda908d800259abc722a31e3717821422) implementation as the base RNG.
