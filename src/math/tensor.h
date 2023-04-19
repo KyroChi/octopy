@@ -96,6 +96,7 @@ void* matmul_loop_p_thread (void* args);
 	
 void matmul_loop (Tensor*, Tensor*, Tensor*, unsigned int);
 Tensor* tensor_matmul (Tensor*, Tensor*);
+Tensor* _tensor_matmul (Tensor*, Tensor*, Tensor*);
 
 float reduce_sum (Tensor*);
 

@@ -25,7 +25,8 @@ layer_copy (Layer* in, Layer* out)
 	out->activ = in->activ;
 	out->input_rank = in->input_rank;
 
-	unsigned int *o_shape = malloc(sizeof(unsigned int) * out->input_rank);
+	unsigned int *o_shape =
+		malloc(sizeof(unsigned int) * out->input_rank);
 	array_cpy_uint(in->input_shape, o_shape, out->input_rank);
 	out->input_shape = o_shape;
 
@@ -111,7 +112,7 @@ create_sequential_net_basic (unsigned int n_layers,
  * Currently uses uniform initialization by default.
  */
 {
-	Layer** layers = malloc( sizeof(Layer*) * 2 *n_layers );
+	Layer** layers = malloc( sizeof(Layer*) * 2 * n_layers );
 	Tensor** activations = malloc( sizeof(Tensor *) * n_layers);
 	Tensor** derivatives = malloc( sizeof(Tensor *) * n_layers);
 
@@ -201,9 +202,31 @@ feed_forward (Sequential* seq, unsigned int training, Tensor *input)
 }
 
 void
-back_propogate (Sequential* net, Tensor* loss, Optimizer* opt,
-		Tensor** activations, Tensor** derivatives)
+back_prop (Sequential* net, Tensor* loss, Optimizer* opt,
+	   Tensor** activations, Tensor** derivatives,
+	   Tensor** deltas)
+/*
+ * Assumes that all of the inputs are allocated!!
+ */
 {
+	// TODO: Check that the loss vector is the correct size
+
+	// We run backwards through the situation
+
+	Tensor* tmp = NULL;
+	unsigned int ii, ind;
+	ind = net->n_layers - 1;
+
+	_tensor_matmul(derivatives[ind], loss, deltas[ind]);
+	
+	for (ii = 0; ii < net->n_layers; ii += 1) {
+		// every other layer is an activation layer!
+		ind -= 1;
+		// delta[-1] @ layer.weights.T
+		// Implement matmul transposed
+		tmp = new_tensor(
+		
+	}
 	return;
 }
 

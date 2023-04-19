@@ -618,6 +618,18 @@ tensor_matmul (Tensor *A, Tensor *B)
 
 	Tensor *AB = new_tensor(new_rank, new_shape);
 	free(new_shape);
+	_tensor_matmul(A, B, AB);
+	return AB;
+}
+
+Tensor*
+_tensor_matmul (Tensor *A, Tensor *B, Tensor*AB)
+/* Assumes that AB is pre-allocated. This version is more memory
+ * efficient if we are repeatdly storing the result in the same, 
+ * array. For example in training a back-prop network.
+ */
+{
+	unsigned int ii;
 #ifdef CUDA
 	// TODO: CUDA code goes here
 	printf("CUDA is not implemented\n");
@@ -714,33 +726,33 @@ tensor_concatenate (Tensor *A, Tensor *B, unsigned int axis)
 Tensor *
 tensor_transpose (Tensor *T, unsigned int ax1, unsigned int ax2)
 /* Is there a better way to do this? */
-{ /*
-	// TODO: Check validity of axes
-	unsigned int *new_axes = calloc(T->rank,
-					sizeof(unsigned int));
-	array_cpy_uint(T->axes, new_axes);
+/* { /\* */
+/* 	// TODO: Check validity of axes */
+/* 	unsigned int *new_axes = calloc(T->rank, */
+/* 					sizeof(unsigned int)); */
+/* 	array_cpy_uint(T->axes, new_axes); */
 	
-	unsigned int tmp = 0;
-	tmp = new_axes[ax1];
-	new_axes[ax1] = new_axes[ax2];
-	new_axes[ax2] = tmp;
+/* 	unsigned int tmp = 0; */
+/* 	tmp = new_axes[ax1]; */
+/* 	new_axes[ax1] = new_axes[ax2]; */
+/* 	new_axes[ax2] = tmp; */
 	
-	Tensor *newT = new_tensor(T->rank, new_axes);
+/* 	Tensor *newT = new_tensor(T->rank, new_axes); */
 
-	float ltmp;
+/* 	float ltmp; */
 
 	
-	unsigned int ii, jj;
-	for (ii = 0; ii < rank; ii += 1) {
-		if (ii == ax1) {
-		} else if (ii == ax2) {
-			// Do nothing
-		} else {
-			for (jj = 0; jj < new_axes[ii]; jj += 1) {
-				set_tensor(newT, 
-			}
-		}
-		} */ return NULL; // Finish this
+/* 	unsigned int ii, jj; */
+/* 	for (ii = 0; ii < rank; ii += 1) { */
+/* 		if (ii == ax1) { */
+/* 		} else if (ii == ax2) { */
+/* 			// Do nothing */
+/* 		} else { */
+/* 			for (jj = 0; jj < new_axes[ii]; jj += 1) { */
+/* 				set_tensor(newT,  */
+/* 			} */
+/* 		} */
+/* 		} *\/ return NULL; // Finish this */
 }
 
 void
